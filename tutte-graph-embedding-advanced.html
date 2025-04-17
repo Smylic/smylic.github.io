@@ -1,0 +1,595 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Укладка графа (Метод Татта)</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 100%;
+            max-width: 1000px;
+        }
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+        }
+        .description {
+            margin-bottom: 20px;
+            text-align: justify;
+            line-height: 1.5;
+        }
+        .layout {
+            display: flex;
+            gap: 20px;
+            width: 100%;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        .left-panel {
+            flex: 1;
+            min-width: 300px;
+        }
+        .graph-container {
+            width: 600px;
+            height: 600px;
+            border: 1px solid #ccc;
+            position: relative;
+            background-color: #f9f9f9;
+        }
+        svg {
+            width: 100%;
+            height: 100%;
+        }
+        .node {
+            cursor: move;
+        }
+        .fixed-node circle {
+            stroke: #ff4500;
+            stroke-width: 3px;
+        }
+        .edge {
+            stroke: #333;
+            stroke-width: 2px;
+        }
+        .controls {
+            display: flex;
+            gap: 10px;
+            margin: 20px 0;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        button {
+            padding: 8px 12px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        button:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+        }
+        .parameters {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        .parameter-group {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+        }
+        label {
+            margin-bottom: 5px;
+        }
+        input[type="range"] {
+            width: 150px;
+        }
+        textarea {
+            width: 100%;
+            height: 200px;
+            margin-bottom: 10px;
+            padding: 8px;
+            font-family: monospace;
+            resize: vertical;
+        }
+        .input-container {
+            margin-bottom: 20px;
+            width: 100%;
+        }
+        .info-panel {
+            margin-top: 10px;
+            padding: 10px;
+            background-color: #f0f0f0;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        .tooltip {
+            position: absolute;
+            padding: 5px 10px;
+            background: rgba(0, 0, 0, 0.7);
+            color: white;
+            border-radius: 3px;
+            pointer-events: none;
+            z-index: 100;
+            font-size: 12px;
+            display: none;
+        }
+        .status {
+            margin: 10px 0;
+            padding: 8px;
+            background-color: #f0f8ff;
+            border-left: 3px solid #4CAF50;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Укладка графа с анимацией (Метод Татта)</h1>
+        <div class="description">
+            <p>Создайте произвольный граф с помощью списка смежности, закрепите нужные вершины и наблюдайте за процессом укладки в реальном времени.</p>
+        </div>
+        
+        <div class="layout">
+            <div class="left-panel">
+                <div class="input-container">
+                    <h3>Список смежности</h3>
+                    <p>Введите список смежности в формате: номер_вершины: соседи (через запятую)</p>
+                    <textarea id="adjacency-list" placeholder="0: 1,2,3&#10;1: 0,2,4&#10;2: 0,1,5&#10;3: 0,4,5&#10;4: 1,3,5&#10;5: 2,3,4">0: 1,5,7
+1: 0,2,8
+2: 1,3,9
+3: 2,4,10
+4: 3,5,11
+5: 0,4,10
+6: 7,9,11
+7: 0,6,8
+8: 1,7,9
+9: 2,6,8
+10: 3,5,11
+11: 4,6,10</textarea>
+                    <button id="parse-graph">Загрузить граф</button>
+                </div>
+                
+                <div class="parameters">
+                    <div class="parameter-group">
+                        <label for="iterations">Итераций: <span id="iterationsValue">50</span></label>
+                        <input type="range" id="iterations" min="10" max="200" value="50">
+                    </div>
+                    <div class="parameter-group">
+                        <label for="animationSpeed">Скорость анимации: <span id="animationSpeedValue">50</span> мс</label>
+                        <input type="range" id="animationSpeed" min="10" max="500" value="50">
+                    </div>
+                </div>
+                
+                <div class="controls">
+                    <button id="resetBtn">Сбросить</button>
+                    <button id="randomBtn">Случайное расположение</button>
+                    <button id="runEmbedding">Запуск укладки</button>
+                    <button id="stopAnimation" disabled>Остановить анимацию</button>
+                </div>
+                
+                <div class="info-panel">
+                    <p>Инструкция:</p>
+                    <ul>
+                        <li>Введите или отредактируйте список смежности графа</li>
+                        <li>Нажмите "Загрузить граф" для визуализации</li>
+                        <li>Двойной клик по вершине - закрепить/открепить её</li>
+                        <li>Для запуска анимированной укладки нажмите "Запуск укладки"</li>
+                    </ul>
+                </div>
+                
+                <div class="status" id="status">Готово к работе</div>
+            </div>
+            
+            <div class="graph-container">
+                <svg id="graph-svg" viewBox="0 0 600 600">
+                    <g id="edges"></g>
+                    <g id="nodes"></g>
+                </svg>
+                <div class="tooltip" id="tooltip"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Глобальные переменные
+        let nodes = [];
+        let edges = [];
+        let animationInterval = null;
+        let currentIteration = 0;
+        let totalIterations = 0;
+        
+        // Инициализация элементов управления
+        document.getElementById('iterations').addEventListener('input', function() {
+            document.getElementById('iterationsValue').textContent = this.value;
+        });
+        
+        document.getElementById('animationSpeed').addEventListener('input', function() {
+            document.getElementById('animationSpeedValue').textContent = this.value;
+        });
+        
+        // Обработчики кнопок
+        document.getElementById('parse-graph').addEventListener('click', parseAndRenderGraph);
+        document.getElementById('resetBtn').addEventListener('click', resetGraph);
+        document.getElementById('randomBtn').addEventListener('click', randomizePositions);
+        document.getElementById('runEmbedding').addEventListener('click', startTutteEmbeddingAnimation);
+        document.getElementById('stopAnimation').addEventListener('click', stopAnimation);
+        
+        // Парсинг списка смежности и рендеринг графа
+        function parseAndRenderGraph() {
+            try {
+                const adjListText = document.getElementById('adjacency-list').value.trim();
+                const lines = adjListText.split('\n');
+                
+                // Создаем вершины
+                const nodeMap = new Map();
+                const edgeSet = new Set();
+                
+                // Вначале определяем все вершины из списка
+                for (const line of lines) {
+                    if (!line.trim()) continue;
+                    
+                    const parts = line.split(':');
+                    if (parts.length !== 2) {
+                        throw new Error(`Неверный формат строки: ${line}`);
+                    }
+                    
+                    const nodeId = parseInt(parts[0].trim());
+                    if (isNaN(nodeId)) {
+                        throw new Error(`Неверный идентификатор вершины: ${parts[0]}`);
+                    }
+                    
+                    if (!nodeMap.has(nodeId)) {
+                        nodeMap.set(nodeId, {
+                            id: nodeId,
+                            x: 300 + 200 * Math.cos(2 * Math.PI * nodeId / lines.length),
+                            y: 300 + 200 * Math.sin(2 * Math.PI * nodeId / lines.length),
+                            fixed: false
+                        });
+                    }
+                }
+                
+                // Затем создаем ребра
+                for (const line of lines) {
+                    if (!line.trim()) continue;
+                    
+                    const parts = line.split(':');
+                    const nodeId = parseInt(parts[0].trim());
+                    const neighborsList = parts[1].trim();
+                    
+                    if (neighborsList) {
+                        const neighbors = neighborsList.split(',').map(n => parseInt(n.trim()));
+                        
+                        for (const neighbor of neighbors) {
+                            if (isNaN(neighbor)) {
+                                throw new Error(`Неверный идентификатор соседа: ${neighbor}`);
+                            }
+                            
+                            if (!nodeMap.has(neighbor)) {
+                                nodeMap.set(neighbor, {
+                                    id: neighbor,
+                                    x: 300 + 200 * Math.cos(2 * Math.PI * neighbor / lines.length),
+                                    y: 300 + 200 * Math.sin(2 * Math.PI * neighbor / lines.length),
+                                    fixed: false
+                                });
+                            }
+                            
+                            // Добавляем ребро (в обоих направлениях, но только уникальные)
+                            const edgeKey1 = `${Math.min(nodeId, neighbor)}-${Math.max(nodeId, neighbor)}`;
+                            if (!edgeSet.has(edgeKey1)) {
+                                edgeSet.add(edgeKey1);
+                                edges.push({
+                                    source: nodeId,
+                                    target: neighbor
+                                });
+                            }
+                        }
+                    }
+                }
+                
+                nodes = Array.from(nodeMap.values());
+                
+                renderGraph();
+                updateStatus(`Граф загружен: ${nodes.length} вершин, ${edges.length} рёбер`);
+            } catch (error) {
+                updateStatus(`Ошибка: ${error.message}`, true);
+            }
+        }
+        
+        // Отрисовка графа
+        function renderGraph() {
+            // Очистка SVG
+            document.getElementById('edges').innerHTML = '';
+            document.getElementById('nodes').innerHTML = '';
+            
+            // Отрисовка рёбер
+            edges.forEach(edge => {
+                const source = nodes.find(n => n.id === edge.source);
+                const target = nodes.find(n => n.id === edge.target);
+                
+                if (!source || !target) return;
+                
+                const edgeElement = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                edgeElement.setAttribute('x1', source.x);
+                edgeElement.setAttribute('y1', source.y);
+                edgeElement.setAttribute('x2', target.x);
+                edgeElement.setAttribute('y2', target.y);
+                edgeElement.classList.add('edge');
+                document.getElementById('edges').appendChild(edgeElement);
+            });
+            
+            // Отрисовка вершин
+            nodes.forEach(node => {
+                const nodeGroup = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+                nodeGroup.classList.add('node');
+                if (node.fixed) {
+                    nodeGroup.classList.add('fixed-node');
+                }
+                nodeGroup.setAttribute('data-id', node.id);
+                
+                const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+                circle.setAttribute('cx', node.x);
+                circle.setAttribute('cy', node.y);
+                circle.setAttribute('r', 8);
+                circle.setAttribute('fill', node.fixed ? '#ff9800' : '#4CAF50');
+                circle.setAttribute('stroke', '#333');
+                circle.setAttribute('stroke-width', '2');
+                
+                const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                text.setAttribute('x', node.x);
+                text.setAttribute('y', node.y + 4);
+                text.setAttribute('text-anchor', 'middle');
+                text.setAttribute('font-size', '10');
+                text.setAttribute('fill', 'white');
+                text.textContent = node.id;
+                
+                nodeGroup.appendChild(circle);
+                nodeGroup.appendChild(text);
+                document.getElementById('nodes').appendChild(nodeGroup);
+                
+                // Добавление возможности перетаскивания
+                nodeGroup.addEventListener('mousedown', startDrag);
+                // Двойной клик для фиксации
+                nodeGroup.addEventListener('dblclick', toggleFixed);
+                
+                // Добавляем подсказку при наведении
+                nodeGroup.addEventListener('mouseover', showTooltip);
+                nodeGroup.addEventListener('mouseout', hideTooltip);
+            });
+        }
+        
+        // Функции для перетаскивания вершин
+        let selectedNode = null;
+        let offset = { x: 0, y: 0 };
+        
+        function startDrag(event) {
+            const nodeId = parseInt(this.getAttribute('data-id'));
+            selectedNode = nodes.find(n => n.id === nodeId);
+            
+            const svg = document.getElementById('graph-svg');
+            const point = svg.createSVGPoint();
+            point.x = event.clientX;
+            point.y = event.clientY;
+            const svgP = point.matrixTransform(svg.getScreenCTM().inverse());
+            
+            offset.x = selectedNode.x - svgP.x;
+            offset.y = selectedNode.y - svgP.y;
+            
+            document.addEventListener('mousemove', drag);
+            document.addEventListener('mouseup', endDrag);
+        }
+        
+        function drag(event) {
+            if (!selectedNode) return;
+            
+            const svg = document.getElementById('graph-svg');
+            const point = svg.createSVGPoint();
+            point.x = event.clientX;
+            point.y = event.clientY;
+            const svgP = point.matrixTransform(svg.getScreenCTM().inverse());
+            
+            selectedNode.x = svgP.x + offset.x;
+            selectedNode.y = svgP.y + offset.y;
+            
+            // Ограничение в пределах SVG
+            selectedNode.x = Math.max(10, Math.min(590, selectedNode.x));
+            selectedNode.y = Math.max(10, Math.min(590, selectedNode.y));
+            
+            renderGraph();
+        }
+        
+        function endDrag() {
+            selectedNode = null;
+            document.removeEventListener('mousemove', drag);
+            document.removeEventListener('mouseup', endDrag);
+        }
+        
+        // Функция для фиксации/освобождения вершин
+        function toggleFixed(event) {
+            const nodeId = parseInt(this.getAttribute('data-id'));
+            const node = nodes.find(n => n.id === nodeId);
+            node.fixed = !node.fixed;
+            
+            renderGraph();
+            updateStatus(`Вершина ${nodeId} ${node.fixed ? 'закреплена' : 'освобождена'}`);
+        }
+        
+        // Показ/скрытие подсказки
+        function showTooltip(event) {
+            const nodeId = parseInt(this.getAttribute('data-id'));
+            const node = nodes.find(n => n.id === nodeId);
+            
+            const tooltip = document.getElementById('tooltip');
+            tooltip.style.display = 'block';
+            tooltip.style.left = (event.pageX + 10) + 'px';
+            tooltip.style.top = (event.pageY + 10) + 'px';
+            tooltip.textContent = `Вершина ${nodeId} ${node.fixed ? '(закреплена)' : ''}`;
+        }
+        
+        function hideTooltip() {
+            document.getElementById('tooltip').style.display = 'none';
+        }
+        
+        // Функция для генерации случайного расположения
+        function randomizePositions() {
+            stopAnimation();
+            
+            nodes.forEach(node => {
+                if (!node.fixed) {
+                    node.x = 50 + Math.random() * 500;
+                    node.y = 50 + Math.random() * 500;
+                }
+            });
+            
+            renderGraph();
+            updateStatus('Вершины случайно расположены');
+        }
+        
+        // Сброс расположения
+        function resetGraph() {
+            stopAnimation();
+            
+            if (nodes.length > 0) {
+                nodes.forEach((node, i) => {
+                    if (!node.fixed) {
+                        node.x = 300 + 200 * Math.cos(2 * Math.PI * i / nodes.length);
+                        node.y = 300 + 200 * Math.sin(2 * Math.PI * i / nodes.length);
+                    }
+                });
+                
+                renderGraph();
+                updateStatus('Граф сброшен в начальное положение');
+            }
+        }
+        
+        // Функция для анимированной укладки графа
+        function startTutteEmbeddingAnimation() {
+            stopAnimation();
+            
+            if (nodes.length === 0) {
+                updateStatus('Граф пуст. Сначала загрузите граф.', true);
+                return;
+            }
+            
+            // Проверка на наличие закрепленных вершин
+            const fixedNodesCount = nodes.filter(n => n.fixed).length;
+            if (fixedNodesCount < 3) {
+                updateStatus('Для укладки Татта необходимо закрепить минимум 3 вершины. Используйте двойной клик, чтобы закрепить вершины.', true);
+                return;
+            }
+            
+            // Сохраняем начальные позиции для анимации
+            const initialPositions = nodes.map(node => ({ ...node }));
+            
+            currentIteration = 0;
+            totalIterations = parseInt(document.getElementById('iterations').value);
+            const delay = parseInt(document.getElementById('animationSpeed').value);
+            
+            // Включаем кнопку остановки анимации
+            document.getElementById('stopAnimation').disabled = false;
+            document.getElementById('runEmbedding').disabled = true;
+            
+            updateStatus(`Запущена анимация укладки (0/${totalIterations})`);
+            
+            // Запускаем анимированные итерации
+            animationInterval = setInterval(() => {
+                if (currentIteration >= totalIterations) {
+                    stopAnimation();
+                    updateStatus(`Укладка завершена (${totalIterations} итераций)`);
+                    return;
+                }
+                
+                // Одна итерация укладки
+                const newPositions = [];
+                
+                nodes.forEach(node => {
+                    if (node.fixed) {
+                        newPositions.push({ x: node.x, y: node.y });
+                        return;
+                    }
+                    
+                    // Найти всех соседей
+                    const neighbors = edges
+                        .filter(e => e.source === node.id || e.target === node.id)
+                        .map(e => e.source === node.id ? nodes.find(n => n.id === e.target) : nodes.find(n => n.id === e.source));
+                    
+                    if (neighbors.length === 0) {
+                        newPositions.push({ x: node.x, y: node.y });
+                        return;
+                    }
+                    
+                    // Расчёт барицентрической координаты
+                    let sumX = 0, sumY = 0;
+                    neighbors.forEach(neighbor => {
+                        sumX += neighbor.x;
+                        sumY += neighbor.y;
+                    });
+                    
+                    newPositions.push({
+                        x: sumX / neighbors.length,
+                        y: sumY / neighbors.length
+                    });
+                });
+                
+                // Обновление позиций
+                nodes.forEach((node, i) => {
+                    if (!node.fixed) {
+                        node.x = newPositions[i].x;
+                        node.y = newPositions[i].y;
+                    }
+                });
+                
+                currentIteration++;
+                updateStatus(`Выполняется укладка (${currentIteration}/${totalIterations})`);
+                renderGraph();
+                
+            }, delay);
+        }
+        
+        function stopAnimation() {
+            if (animationInterval) {
+                clearInterval(animationInterval);
+                animationInterval = null;
+                
+                document.getElementById('stopAnimation').disabled = true;
+                document.getElementById('runEmbedding').disabled = false;
+                updateStatus('Анимация остановлена');
+            }
+        }
+        
+        function updateStatus(message, isError = false) {
+            const statusElement = document.getElementById('status');
+            statusElement.textContent = message;
+            
+            if (isError) {
+                statusElement.style.borderLeft = '3px solid #ff4500';
+                statusElement.style.backgroundColor = '#fff0f0';
+            } else {
+                statusElement.style.borderLeft = '3px solid #4CAF50';
+                statusElement.style.backgroundColor = '#f0f8ff';
+            }
+        }
+        
+        // Инициализация страницы
+        document.addEventListener('DOMContentLoaded', function() {
+            parseAndRenderGraph(); // Загружаем граф по умолчанию при старте
+        });
+    </script>
+</body>
+</html>
