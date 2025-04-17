@@ -141,28 +141,34 @@
 </head>
 <body>
     <div class="container">
-        <h1>Укладка графа с анимацией (Метод Татта)</h1>
+        <h1>Укладка графа с плавной анимацией (Метод Татта)</h1>
         <div class="description">
-            <p>Создайте произвольный граф с помощью списка смежности, закрепите нужные вершины и наблюдайте за процессом укладки в реальном времени.</p>
+            <p>Создайте произвольный граф с помощью списка рёбер, закрепите нужные вершины и наблюдайте за процессом укладки в реальном времени.</p>
         </div>
         
         <div class="layout">
             <div class="left-panel">
                 <div class="input-container">
-                    <h3>Список смежности</h3>
-                    <p>Введите список смежности в формате: номер_вершины: соседи (через запятую)</p>
-                    <textarea id="adjacency-list" placeholder="0: 1,2,3&#10;1: 0,2,4&#10;2: 0,1,5&#10;3: 0,4,5&#10;4: 1,3,5&#10;5: 2,3,4">0: 1,5,7
-1: 0,2,8
-2: 1,3,9
-3: 2,4,10
-4: 3,5,11
-5: 0,4,10
-6: 7,9,11
-7: 0,6,8
-8: 1,7,9
-9: 2,6,8
-10: 3,5,11
-11: 4,6,10</textarea>
+                    <h3>Список рёбер</h3>
+                    <p>Введите список рёбер в формате: вершина1-вершина2 (по одному ребру на строку)</p>
+                    <textarea id="edge-list" placeholder="0-1&#10;1-2&#10;2-3&#10;3-0&#10;0-2&#10;1-3">0-1
+0-5
+0-7
+1-2
+1-8
+2-3
+2-9
+3-4
+3-10
+4-5
+4-11
+5-10
+6-7
+6-9
+6-11
+7-8
+8-9
+10-11</textarea>
                     <button id="parse-graph">Загрузить граф</button>
                 </div>
                 
@@ -172,8 +178,12 @@
                         <input type="range" id="iterations" min="10" max="200" value="50">
                     </div>
                     <div class="parameter-group">
-                        <label for="animationSpeed">Скорость анимации: <span id="animationSpeedValue">50</span> мс</label>
-                        <input type="range" id="animationSpeed" min="10" max="500" value="50">
+                        <label for="animationSpeed">Скорость анимации: <span id="animationSpeedValue">20</span> мс</label>
+                        <input type="range" id="animationSpeed" min="5" max="100" value="20">
+                    </div>
+                    <div class="parameter-group">
+                        <label for="transitionSpeed">Плавность движения: <span id="transitionSpeedValue">0.1</span></label>
+                        <input type="range" id="transitionSpeed" min="1" max="20" value="10">
                     </div>
                 </div>
                 
@@ -187,7 +197,7 @@
                 <div class="info-panel">
                     <p>Инструкция:</p>
                     <ul>
-                        <li>Введите или отредактируйте список смежности графа</li>
+                        <li>Введите или отредактируйте список рёбер графа</li>
                         <li>Нажмите "Загрузить граф" для визуализации</li>
                         <li>Двойной клик по вершине - закрепить/открепить её</li>
                         <li>Для запуска анимированной укладки нажмите "Запуск укладки"</li>
@@ -211,9 +221,11 @@
         // Глобальные переменные
         let nodes = [];
         let edges = [];
-        let animationInterval = null;
+        let animationFrameId = null;
         let currentIteration = 0;
         let totalIterations = 0;
+        let isEmbeddingRunning = false;
+        let targetPositions = [];
         
         // Инициализация элементов управления
         document.getElementById('iterations').addEventListener('input', function() {
@@ -224,6 +236,11 @@
             document.getElementById('animationSpeedValue').textContent = this.value;
         });
         
+        document.getElementById('transitionSpeed').addEventListener('input', function() {
+            const value = this.value / 100;
+            document.getElementById('transitionSpeedValue').textContent = value.toFixed(2);
+        });
+        
         // Обработчики кнопок
         document.getElementById('parse-graph').addEventListener('click', parseAndRenderGraph);
         document.getElementById('resetBtn').addEventListener('click', resetGraph);
@@ -231,79 +248,71 @@
         document.getElementById('runEmbedding').addEventListener('click', startTutteEmbeddingAnimation);
         document.getElementById('stopAnimation').addEventListener('click', stopAnimation);
         
-        // Парсинг списка смежности и рендеринг графа
+        // Парсинг списка рёбер и рендеринг графа
         function parseAndRenderGraph() {
             try {
-                const adjListText = document.getElementById('adjacency-list').value.trim();
-                const lines = adjListText.split('\n');
+                stopAnimation();
                 
-                // Создаем вершины
+                const edgeListText = document.getElementById('edge-list').value.trim();
+                const lines = edgeListText.split('\n');
+                
+                // Создаем вершины и рёбра
                 const nodeMap = new Map();
                 const edgeSet = new Set();
+                edges = [];
                 
-                // Вначале определяем все вершины из списка
                 for (const line of lines) {
                     if (!line.trim()) continue;
                     
-                    const parts = line.split(':');
+                    const parts = line.split('-');
                     if (parts.length !== 2) {
-                        throw new Error(`Неверный формат строки: ${line}`);
+                        throw new Error(`Неверный формат ребра: ${line} (используйте формат вершина1-вершина2)`);
                     }
                     
-                    const nodeId = parseInt(parts[0].trim());
-                    if (isNaN(nodeId)) {
-                        throw new Error(`Неверный идентификатор вершины: ${parts[0]}`);
+                    const sourceId = parseInt(parts[0].trim());
+                    const targetId = parseInt(parts[1].trim());
+                    
+                    if (isNaN(sourceId) || isNaN(targetId)) {
+                        throw new Error(`Неверный идентификатор вершины в ребре: ${line}`);
                     }
                     
-                    if (!nodeMap.has(nodeId)) {
-                        nodeMap.set(nodeId, {
-                            id: nodeId,
-                            x: 300 + 200 * Math.cos(2 * Math.PI * nodeId / lines.length),
-                            y: 300 + 200 * Math.sin(2 * Math.PI * nodeId / lines.length),
+                    // Добавляем вершины в узлы если их еще нет
+                    if (!nodeMap.has(sourceId)) {
+                        nodeMap.set(sourceId, {
+                            id: sourceId,
+                            x: 300 + 200 * Math.cos(2 * Math.PI * sourceId / 12),
+                            y: 300 + 200 * Math.sin(2 * Math.PI * sourceId / 12),
                             fixed: false
+                        });
+                    }
+                    
+                    if (!nodeMap.has(targetId)) {
+                        nodeMap.set(targetId, {
+                            id: targetId,
+                            x: 300 + 200 * Math.cos(2 * Math.PI * targetId / 12),
+                            y: 300 + 200 * Math.sin(2 * Math.PI * targetId / 12),
+                            fixed: false
+                        });
+                    }
+                    
+                    // Добавляем ребро
+                    const edgeKey = `${Math.min(sourceId, targetId)}-${Math.max(sourceId, targetId)}`;
+                    if (!edgeSet.has(edgeKey)) {
+                        edgeSet.add(edgeKey);
+                        edges.push({
+                            source: sourceId,
+                            target: targetId
                         });
                     }
                 }
                 
-                // Затем создаем ребра
-                for (const line of lines) {
-                    if (!line.trim()) continue;
-                    
-                    const parts = line.split(':');
-                    const nodeId = parseInt(parts[0].trim());
-                    const neighborsList = parts[1].trim();
-                    
-                    if (neighborsList) {
-                        const neighbors = neighborsList.split(',').map(n => parseInt(n.trim()));
-                        
-                        for (const neighbor of neighbors) {
-                            if (isNaN(neighbor)) {
-                                throw new Error(`Неверный идентификатор соседа: ${neighbor}`);
-                            }
-                            
-                            if (!nodeMap.has(neighbor)) {
-                                nodeMap.set(neighbor, {
-                                    id: neighbor,
-                                    x: 300 + 200 * Math.cos(2 * Math.PI * neighbor / lines.length),
-                                    y: 300 + 200 * Math.sin(2 * Math.PI * neighbor / lines.length),
-                                    fixed: false
-                                });
-                            }
-                            
-                            // Добавляем ребро (в обоих направлениях, но только уникальные)
-                            const edgeKey1 = `${Math.min(nodeId, neighbor)}-${Math.max(nodeId, neighbor)}`;
-                            if (!edgeSet.has(edgeKey1)) {
-                                edgeSet.add(edgeKey1);
-                                edges.push({
-                                    source: nodeId,
-                                    target: neighbor
-                                });
-                            }
-                        }
-                    }
-                }
-                
                 nodes = Array.from(nodeMap.values());
+                
+                // Расположим вершины в круге
+                nodes.forEach((node, i) => {
+                    node.x = 300 + 200 * Math.cos(2 * Math.PI * i / nodes.length);
+                    node.y = 300 + 200 * Math.sin(2 * Math.PI * i / nodes.length);
+                });
                 
                 renderGraph();
                 updateStatus(`Граф загружен: ${nodes.length} вершин, ${edges.length} рёбер`);
@@ -379,6 +388,8 @@
         let offset = { x: 0, y: 0 };
         
         function startDrag(event) {
+            if (isEmbeddingRunning) return; // Запрещаем перетаскивание во время анимации
+            
             const nodeId = parseInt(this.getAttribute('data-id'));
             selectedNode = nodes.find(n => n.id === nodeId);
             
@@ -422,6 +433,8 @@
         
         // Функция для фиксации/освобождения вершин
         function toggleFixed(event) {
+            if (isEmbeddingRunning) return; // Запрещаем изменение во время анимации
+            
             const nodeId = parseInt(this.getAttribute('data-id'));
             const node = nodes.find(n => n.id === nodeId);
             node.fixed = !node.fixed;
@@ -478,7 +491,91 @@
             }
         }
         
-        // Функция для анимированной укладки графа
+        // Функция для вычисления следующей итерации алгоритма Татта
+        function calculateNextPositions() {
+            const newPositions = [];
+            
+            nodes.forEach(node => {
+                if (node.fixed) {
+                    newPositions.push({ x: node.x, y: node.y });
+                    return;
+                }
+                
+                // Найти всех соседей
+                const neighbors = edges
+                    .filter(e => e.source === node.id || e.target === node.id)
+                    .map(e => e.source === node.id ? nodes.find(n => n.id === e.target) : nodes.find(n => n.id === e.source));
+                
+                if (neighbors.length === 0) {
+                    newPositions.push({ x: node.x, y: node.y });
+                    return;
+                }
+                
+                // Расчёт барицентрической координаты
+                let sumX = 0, sumY = 0;
+                neighbors.forEach(neighbor => {
+                    sumX += neighbor.x;
+                    sumY += neighbor.y;
+                });
+                
+                newPositions.push({
+                    x: sumX / neighbors.length,
+                    y: sumY / neighbors.length
+                });
+            });
+            
+            return newPositions;
+        }
+        
+        // Функция для плавного перемещения вершин к целевым позициям
+        function animateToTargetPositions() {
+            const transitionSpeed = document.getElementById('transitionSpeed').value / 100;
+            let allNodesReachedTarget = true;
+            
+            // Обновляем позиции с интерполяцией
+            nodes.forEach((node, i) => {
+                if (node.fixed) return;
+                
+                const dx = targetPositions[i].x - node.x;
+                const dy = targetPositions[i].y - node.y;
+                
+                // Если разница ничтожно мала, считаем что вершина достигла цели
+                if (Math.abs(dx) < 0.1 && Math.abs(dy) < 0.1) {
+                    node.x = targetPositions[i].x;
+                    node.y = targetPositions[i].y;
+                } else {
+                    // Иначе применяем движение с затуханием
+                    node.x += dx * transitionSpeed;
+                    node.y += dy * transitionSpeed;
+                    allNodesReachedTarget = false;
+                }
+            });
+            
+            renderGraph();
+            
+            // Если анимация всё ещё активна, продолжаем
+            if (isEmbeddingRunning) {
+                // Если все вершины достигли целевых позиций, рассчитываем новые
+                if (allNodesReachedTarget) {
+                    currentIteration++;
+                    updateStatus(`Выполняется укладка (${currentIteration}/${totalIterations})`);
+                    
+                    if (currentIteration >= totalIterations) {
+                        stopAnimation();
+                        updateStatus(`Укладка завершена (${totalIterations} итераций)`);
+                        return;
+                    }
+                    
+                    // Рассчитываем новые целевые позиции
+                    targetPositions = calculateNextPositions();
+                }
+                
+                // Применяем следующий кадр анимации
+                animationFrameId = requestAnimationFrame(animateToTargetPositions);
+            }
+        }
+        
+        // Функция для запуска анимированной укладки графа
         function startTutteEmbeddingAnimation() {
             stopAnimation();
             
@@ -494,78 +591,28 @@
                 return;
             }
             
-            // Сохраняем начальные позиции для анимации
-            const initialPositions = nodes.map(node => ({ ...node }));
-            
             currentIteration = 0;
             totalIterations = parseInt(document.getElementById('iterations').value);
-            const delay = parseInt(document.getElementById('animationSpeed').value);
             
             // Включаем кнопку остановки анимации
             document.getElementById('stopAnimation').disabled = false;
             document.getElementById('runEmbedding').disabled = true;
+            isEmbeddingRunning = true;
             
             updateStatus(`Запущена анимация укладки (0/${totalIterations})`);
             
-            // Запускаем анимированные итерации
-            animationInterval = setInterval(() => {
-                if (currentIteration >= totalIterations) {
-                    stopAnimation();
-                    updateStatus(`Укладка завершена (${totalIterations} итераций)`);
-                    return;
-                }
-                
-                // Одна итерация укладки
-                const newPositions = [];
-                
-                nodes.forEach(node => {
-                    if (node.fixed) {
-                        newPositions.push({ x: node.x, y: node.y });
-                        return;
-                    }
-                    
-                    // Найти всех соседей
-                    const neighbors = edges
-                        .filter(e => e.source === node.id || e.target === node.id)
-                        .map(e => e.source === node.id ? nodes.find(n => n.id === e.target) : nodes.find(n => n.id === e.source));
-                    
-                    if (neighbors.length === 0) {
-                        newPositions.push({ x: node.x, y: node.y });
-                        return;
-                    }
-                    
-                    // Расчёт барицентрической координаты
-                    let sumX = 0, sumY = 0;
-                    neighbors.forEach(neighbor => {
-                        sumX += neighbor.x;
-                        sumY += neighbor.y;
-                    });
-                    
-                    newPositions.push({
-                        x: sumX / neighbors.length,
-                        y: sumY / neighbors.length
-                    });
-                });
-                
-                // Обновление позиций
-                nodes.forEach((node, i) => {
-                    if (!node.fixed) {
-                        node.x = newPositions[i].x;
-                        node.y = newPositions[i].y;
-                    }
-                });
-                
-                currentIteration++;
-                updateStatus(`Выполняется укладка (${currentIteration}/${totalIterations})`);
-                renderGraph();
-                
-            }, delay);
+            // Рассчитываем целевые позиции для первой итерации
+            targetPositions = calculateNextPositions();
+            
+            // Запускаем анимацию
+            animationFrameId = requestAnimationFrame(animateToTargetPositions);
         }
         
         function stopAnimation() {
-            if (animationInterval) {
-                clearInterval(animationInterval);
-                animationInterval = null;
+            if (animationFrameId) {
+                cancelAnimationFrame(animationFrameId);
+                animationFrameId = null;
+                isEmbeddingRunning = false;
                 
                 document.getElementById('stopAnimation').disabled = true;
                 document.getElementById('runEmbedding').disabled = false;
