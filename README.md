@@ -1,1 +1,0 @@
-# smylic.github.io
