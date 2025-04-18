@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Укладка графа (Метод Татта)</title>
+    <title>Tutte Embedding</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -137,74 +137,177 @@
             background-color: #f0f8ff;
             border-left: 3px solid #4CAF50;
         }
+        .language-selector {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        .language-button {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            background-color: #f0f0f0;
+            color: #333;
+            border: 1px solid #ddd;
+            padding: 5px 10px;
+            margin-left: 5px;
+            cursor: pointer;
+            border-radius: 4px;
+        }
+        .language-button.active {
+            background-color: #4CAF50;
+            color: white;
+            border-color: #4CAF50;
+        }
+        .language-button img {
+            width: 20px;
+            height: 15px;
+        }
+        .flag-de {
+            background: linear-gradient(180deg, black 33%, red 33%, red 66%, gold 66%);
+            width: 20px;
+            height: 15px;
+            display: inline-block;
+        }
+        .flag-by {
+            background: linear-gradient(180deg, white 33%, red 33%, red 66%, white 66%);
+            width: 20px;
+            height: 15px;
+            display: inline-block;
+        }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>Укладка графа с плавной анимацией (Метод Татта)</h1>
+        <div class="language-selector">
+            <button class="language-button active" data-lang="en">
+                <img src="data:image/svg+xml;base64,PHN2ZyB2aWV3Qm94PSIwIDAgNjAwIDMwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4NCiAgPCEtLSBCYWNrZ3JvdW5kIChCbHVlKSAtLT4NCiAgPHJlY3Qgd2lkdGg9IjYwMCIgaGVpZ2h0PSIzMDAiIGZpbGw9IiMwMTIxNjkiLz4NCiAgDQogIDwhLS0gV2hpdGUgZGlhZ29uYWxzIC0tPg0KICA8cGF0aCBkPSJNIDAsMCBMIDYwMCwzMDAgTSA2MDAsMCBMIDAsMzAwIiBzdHJva2U9IiNGRkZGRkYiIHN0cm9rZS13aWR0aD0iNjAiLz4NCiAgDQogIDwhLS0gUmVkIGRpYWdvbmFscyAtLT4NCiAgPHBhdGggZD0iTSAwLDAgTCA2MDAsMzAwIE0gNjAwLDAgTCAwLDMwMCIgc3Ryb2tlPSIjQzgxMDJFIiBzdHJva2Utd2lkdGg9IjQwIi8+DQogIA0KICA8IS0tIFdoaXRlIGNyb3NzIC0tPg0KICA8cGF0aCBkPSJNIDMwMCwwIEwgMzAwLDMwMCBNIDAsMTUwIEwgNjAwLDE1MCIgc3Ryb2tlPSIjRkZGRkZGIiBzdHJva2Utd2lkdGg9IjEwMCIvPg0KICA8IS0tIFJlZCBjcm9zcyAoU3QuIEdlb3JnZSdzIENyb3NzKSAtLT4NCiAgPHBhdGggZD0iTSAzMDAsMCBMIDMwMCwzMDAgTSAwLDE1MCBMIDYwMCwxNTAiIHN0cm9rZT0iI0M4MTAyRSIgc3Ryb2tlLXdpZHRoPSI2MCIvPg0KPC9zdmc+" alt="British Flag (Union Jack)" width="300" height="150">
+                <span>English</span>
+            </button>
+            <button class="language-button" data-lang="de">
+                <span class="flag-de"></span>
+                <span>Deutsch</span>
+            </button>
+            <button class="language-button" data-lang="be">
+                <span class="flag-by"></span>
+                <span>Беларуская</span>
+            </button>
+        </div>
+        
+        <h1 class="lang-en">Tutte Embedding</h1>
+        <h1 class="lang-de" style="display:none">Tuttes Einbettung</h1>
+        <h1 class="lang-be" style="display:none">Укладка Татта</h1>
+        
         <div class="description">
-            <p>Создайте произвольный граф с помощью списка рёбер, закрепите нужные вершины и наблюдайте за процессом укладки в реальном времени.</p>
+            <p class="lang-en">Create an arbitrary graph using an edge list, pin the necessary vertices, and observe the embedding process in real-time.</p>
+            <p class="lang-de" style="display:none">Erstellen Sie einen beliebigen Graphen mit einer Kantenliste, fixieren Sie die notwendigen Knoten und beobachten Sie den Einbettungsprozess in Echtzeit.</p>
+            <p class="lang-be" style="display:none">Стварыце адвольны граф з дапамогай спісу рэбраў, замацуйце патрэбныя вяршыні і назірайце за працэсам укладкі ў рэальным часе.</p>
         </div>
         
         <div class="layout">
             <div class="left-panel">
                 <div class="input-container">
-                    <h3>Список рёбер</h3>
-                    <p>Введите список рёбер в формате: вершина1-вершина2 (по одному ребру на строку)</p>
-                    <textarea id="edge-list" placeholder="0-1&#10;1-2&#10;2-3&#10;3-0&#10;0-2&#10;1-3">0-1
-0-5
-0-7
-1-2
-1-8
-2-3
-2-9
-3-4
-3-10
-4-5
-4-11
-5-10
-6-7
-6-9
-6-11
-7-8
-8-9
-10-11</textarea>
-                    <button id="parse-graph">Загрузить граф</button>
+                    <h3 class="lang-en">Edge List</h3>
+                    <h3 class="lang-de" style="display:none">Kantenliste</h3>
+                    <h3 class="lang-be" style="display:none">Спіс рэбраў</h3>
+                    
+                    <p class="lang-en">Enter the edge list in the format:<br /><i>v</i><sub>1</sub> <i>v</i><sub>2</sub><br />(one edge per line)</p>
+                    <p class="lang-de" style="display:none">Geben Sie die Kantenliste im Format ein:<br /><i>v</i><sub>1</sub> <i>v</i><sub>2</sub><br />(eine Kante pro Zeile)</p>
+                    <p class="lang-be" style="display:none">Увядзіце спіс рэбраў у фармаце:<br /><i>v</i><sub>1</sub> <i>v</i><sub>2</sub><br />(па адным рабры на радок)</p>
+                    
+                    <textarea id="edge-list" placeholder="0 1&#10;1 2&#10;2 3&#10;3 0&#10;0 2&#10;1 3">0 1
+0 5
+0 7
+1 2
+1 8
+2 3
+2 9
+3 4
+3 10
+4 5
+4 11
+5 10
+6 7
+6 9
+6 11
+7 8
+8 9
+10 11</textarea>
+                    <button id="parse-graph" class="lang-en">Load Graph</button>
+                    <button id="parse-graph-de" class="lang-de" style="display:none">Graph laden</button>
+                    <button id="parse-graph-be" class="lang-be" style="display:none">Загрузіць граф</button>
                 </div>
                 
                 <div class="parameters">
                     <div class="parameter-group">
-                        <label for="iterations">Итераций: <span id="iterationsValue">50</span></label>
+                        <label for="iterations" class="lang-en">Iterations: <span id="iterationsValue">50</span></label>
+                        <label for="iterations" class="lang-de" style="display:none">Iterationen: <span id="iterationsValue-de">50</span></label>
+                        <label for="iterations" class="lang-be" style="display:none">Ітэрацыі: <span id="iterationsValue-be">50</span></label>
                         <input type="range" id="iterations" min="10" max="200" value="50">
                     </div>
                     <div class="parameter-group">
-                        <label for="animationSpeed">Скорость анимации: <span id="animationSpeedValue">20</span> мс</label>
+                        <label for="animationSpeed" class="lang-en">Animation Speed: <span id="animationSpeedValue">20</span> ms</label>
+                        <label for="animationSpeed" class="lang-de" style="display:none">Animationsgeschwindigkeit: <span id="animationSpeedValue-de">20</span> ms</label>
+                        <label for="animationSpeed" class="lang-be" style="display:none">Хуткасць анімацыі: <span id="animationSpeedValue-be">20</span> мс</label>
                         <input type="range" id="animationSpeed" min="5" max="100" value="20">
                     </div>
                     <div class="parameter-group">
-                        <label for="transitionSpeed">Плавность движения: <span id="transitionSpeedValue">0.1</span></label>
-                        <input type="range" id="transitionSpeed" min="1" max="20" value="10">
+                        <label for="transitionSpeed" class="lang-en">Movement Smoothness: <span id="transitionSpeedValue">0.3</span></label>
+                        <label for="transitionSpeed" class="lang-de" style="display:none">Bewegungsgeschmeidigkeit: <span id="transitionSpeedValue-de">0.3</span></label>
+                        <label for="transitionSpeed" class="lang-be" style="display:none">Плаўнасць руху: <span id="transitionSpeedValue-be">0.3</span></label>
+                        <input type="range" id="transitionSpeed" min="20" max="40" value="30">
                     </div>
                 </div>
                 
                 <div class="controls">
-                    <button id="resetBtn">Сбросить</button>
-                    <button id="randomBtn">Случайное расположение</button>
-                    <button id="runEmbedding">Запуск укладки</button>
-                    <button id="stopAnimation" disabled>Остановить анимацию</button>
+                    <button id="resetBtn" class="lang-en">Reset</button>
+                    <button id="resetBtn-de" class="lang-de" style="display:none">Zurücksetzen</button>
+                    <button id="resetBtn-be" class="lang-be" style="display:none">Скінуць</button>
+                    
+                    <button id="randomBtn" class="lang-en">Random Layout</button>
+                    <button id="randomBtn-de" class="lang-de" style="display:none">Zufällige Anordnung</button>
+                    <button id="randomBtn-be" class="lang-be" style="display:none">Выпадковае размяшчэнне</button>
+                    
+                    <button id="runEmbedding" class="lang-en">Start Embedding</button>
+                    <button id="runEmbedding-de" class="lang-de" style="display:none">Einbettung starten</button>
+                    <button id="runEmbedding-be" class="lang-be" style="display:none">Запуск укладкі</button>
+                    
+                    <button id="stopAnimation" class="lang-en" disabled>Stop Animation</button>
+                    <button id="stopAnimation-de" class="lang-de" style="display:none" disabled>Animation stoppen</button>
+                    <button id="stopAnimation-be" class="lang-be" style="display:none" disabled>Спыніць анімацыю</button>
                 </div>
                 
                 <div class="info-panel">
-                    <p>Инструкция:</p>
-                    <ul>
-                        <li>Введите или отредактируйте список рёбер графа</li>
-                        <li>Нажмите "Загрузить граф" для визуализации</li>
-                        <li>Двойной клик по вершине - закрепить/открепить её</li>
-                        <li>Для запуска анимированной укладки нажмите "Запуск укладки"</li>
+                    <p class="lang-en">Instructions:</p>
+                    <p class="lang-de" style="display:none">Anleitung:</p>
+                    <p class="lang-be" style="display:none">Інструкцыя:</p>
+                    
+                    <ul class="lang-en">
+                        <li>Enter or edit the graph edge list</li>
+                        <li>Click “Load Graph” to visualize</li>
+                        <li>Double-click on a vertex to pin/unpin it</li>
+                        <li>To start animated embedding, click “Start Embedding”</li>
+                    </ul>
+                    <ul class="lang-de" style="display:none">
+                        <li>Geben Sie die Kantenliste ein oder bearbeiten Sie sie</li>
+                        <li>Klicken Sie auf „Graph laden“ zur Visualisierung</li>
+                        <li>Doppelklicken Sie auf einen Knoten, um ihn zu fixieren/freizugeben</li>
+                        <li>Um die animierte Einbettung zu starten, klicken Sie auf „Einbettung starten“</li>
+                    </ul>
+                    <ul class="lang-be" style="display:none">
+                        <li>Увядзіце або адрэдагуйце спіс рэбраў графа</li>
+                        <li>Націсніце «Загрузіць граф» для візуалізацыі</li>
+                        <li>Двайны клік па вяршыні — замацаваць/адмацаваць яе</li>
+                        <li>Для запуску анімаванай укладкі націсніце «Запуск укладкі»</li>
                     </ul>
                 </div>
                 
-                <div class="status" id="status">Готово к работе</div>
+                <div class="status" id="status">
+                    <span class="lang-en">Ready to work</span>
+                    <span class="lang-de" style="display:none">Arbeitsbereit</span>
+                    <span class="lang-be" style="display:none">Гатова да працы</span>
+                </div>
             </div>
             
             <div class="graph-container">
@@ -218,7 +321,7 @@
     </div>
 
     <script>
-        // Глобальные переменные
+        // Global variables
         let nodes = [];
         let edges = [];
         let animationFrameId = null;
@@ -226,29 +329,143 @@
         let totalIterations = 0;
         let isEmbeddingRunning = false;
         let targetPositions = [];
+        let currentLanguage = 'en';
         
-        // Инициализация элементов управления
-        document.getElementById('iterations').addEventListener('input', function() {
-            document.getElementById('iterationsValue').textContent = this.value;
+        // Language translations
+        const translations = {
+            en: {
+                ready: "Ready to work",
+                graphLoaded: "Graph loaded: {0} vertices, {1} edges",
+                randomPositions: "Vertices randomly positioned",
+                graphReset: "Graph reset to initial position",
+                vertex: "Vertex {0}",
+                vertexPinned: "Vertex {0} (pinned)",
+                vertexPinnedToggle: "Vertex {0} {1}",
+                pinned: "pinned",
+                unpinned: "unpinned",
+                embeddingRunning: "Embedding in progress ({0}/{1})",
+                embeddingCompleted: "Embedding completed ({0} iterations)",
+                animationStopped: "Animation stopped",
+                missingGraph: "Graph is missing. Please load a graph first.",
+                notEnoughPinned: "For Tutte embedding, at least 3 vertices must be pinned. Double-click to pin vertices.",
+                error: "Error: {0}"
+            },
+            de: {
+                ready: "Arbeitsbereit",
+                graphLoaded: "Graph geladen: {0} Knoten, {1} Kanten",
+                randomPositions: "Knoten zufällig positioniert",
+                graphReset: "Graph auf Ausgangsposition zurückgesetzt",
+                vertex: "Knoten {0}",
+                vertexPinned: "Knoten {0} (fixiert)",
+                vertexPinnedToggle: "Knoten {0} {1}",
+                pinned: "fixiert",
+                unpinned: "freigegeben",
+                embeddingRunning: "Einbettung läuft ({0}/{1})",
+                embeddingCompleted: "Einbettung abgeschlossen ({0} Iterationen)",
+                animationStopped: "Animation gestoppt",
+                missingGraph: "Graph fehlt. Bitte laden Sie zuerst einen Graphen.",
+                notEnoughPinned: "Für die Tutte-Einbettung müssen mindestens 3 Knoten fixiert sein. Doppelklicken Sie, um Knoten zu fixieren.",
+                error: "Fehler: {0}"
+            },
+            be: {
+                ready: "Гатовы да працы",
+                graphLoaded: "Граф загружаны: {0} вяршынь, {1} рэбраў",
+                randomPositions: "Вяршыні выпадкова размешчаныя",
+                graphReset: "Граф скінуты ў пачатковае становішча",
+                vertex: "Вяршыня {0}",
+                vertexPinned: "Вяршыня {0} (замацаваная)",
+                vertexPinnedToggle: "Вяршыня {0} {1}",
+                pinned: "замацаваная",
+                unpinned: "вызваленая",
+                embeddingRunning: "Выконваецца ўкладка ({0}/{1})",
+                embeddingCompleted: "Укладка скончаная ({0} ітэрацый)",
+                animationStopped: "Анімацыя спыненая",
+                missingGraph: "Графа няма. Спачатку загрузіце граф.",
+                notEnoughPinned: "Для ўкладкі Татта неабходна замацаваць не менш за 3 вяршыні. Выкарыстоўвайце двайны клік, каб замацаваць вяршыні.",
+                error: "Памылка: {0}"
+            }
+        };
+        
+        // String format helper function
+        function formatString(str, ...args) {
+            return str.replace(/{(\d+)}/g, (match, index) => {
+                return typeof args[index] !== 'undefined' ? args[index] : match;
+            });
+        }
+        
+        // Language switcher
+        document.querySelectorAll('.language-button').forEach(button => {
+            button.addEventListener('click', function() {
+                const lang = this.getAttribute('data-lang');
+                switchLanguage(lang);
+                
+                // Update active button
+                document.querySelectorAll('.language-button').forEach(btn => {
+                    btn.classList.remove('active');
+                });
+                this.classList.add('active');
+            });
         });
         
-        document.getElementById('animationSpeed').addEventListener('input', function() {
-            document.getElementById('animationSpeedValue').textContent = this.value;
-        });
+        function switchLanguage(lang) {
+            currentLanguage = lang;
+            
+            // Hide all language elements
+            document.querySelectorAll('[class*="lang-"]').forEach(el => {
+                el.style.display = 'none';
+            });
+            
+            // Show only current language elements
+            document.querySelectorAll(`.lang-${lang}`).forEach(el => {
+                el.style.display = '';
+            });
+            
+            // Update status message
+            updateStatus(translations[lang].ready);
+        }
         
-        document.getElementById('transitionSpeed').addEventListener('input', function() {
-            const value = this.value / 100;
-            document.getElementById('transitionSpeedValue').textContent = value.toFixed(2);
-        });
+        // Initialize control elements
+        function updateSliderValues() {
+            document.getElementById('iterationsValue').textContent = document.getElementById('iterations').value;
+            document.getElementById('iterationsValue-de').textContent = document.getElementById('iterations').value;
+            document.getElementById('iterationsValue-be').textContent = document.getElementById('iterations').value;
+            
+            document.getElementById('animationSpeedValue').textContent = document.getElementById('animationSpeed').value;
+            document.getElementById('animationSpeedValue-de').textContent = document.getElementById('animationSpeed').value;
+            document.getElementById('animationSpeedValue-be').textContent = document.getElementById('animationSpeed').value;
+            
+            const transValue = document.getElementById('transitionSpeed').value / 100;
+            document.getElementById('transitionSpeedValue').textContent = transValue.toFixed(2);
+            document.getElementById('transitionSpeedValue-de').textContent = transValue.toFixed(2);
+            document.getElementById('transitionSpeedValue-be').textContent = transValue.toFixed(2);
+        }
         
-        // Обработчики кнопок
+        document.getElementById('iterations').addEventListener('input', updateSliderValues);
+        document.getElementById('animationSpeed').addEventListener('input', updateSliderValues);
+        document.getElementById('transitionSpeed').addEventListener('input', updateSliderValues);
+        
+        // Button event handlers
         document.getElementById('parse-graph').addEventListener('click', parseAndRenderGraph);
-        document.getElementById('resetBtn').addEventListener('click', resetGraph);
-        document.getElementById('randomBtn').addEventListener('click', randomizePositions);
-        document.getElementById('runEmbedding').addEventListener('click', startTutteEmbeddingAnimation);
-        document.getElementById('stopAnimation').addEventListener('click', stopAnimation);
+        document.getElementById('parse-graph-de').addEventListener('click', parseAndRenderGraph);
+        document.getElementById('parse-graph-be').addEventListener('click', parseAndRenderGraph);
         
-        // Парсинг списка рёбер и рендеринг графа
+        document.getElementById('resetBtn').addEventListener('click', resetGraph);
+        document.getElementById('resetBtn-de').addEventListener('click', resetGraph);
+        document.getElementById('resetBtn-be').addEventListener('click', resetGraph);
+        
+        document.getElementById('randomBtn').addEventListener('click', randomizePositions);
+        document.getElementById('randomBtn-de').addEventListener('click', randomizePositions);
+        document.getElementById('randomBtn-be').addEventListener('click', randomizePositions);
+        
+        document.getElementById('runEmbedding').addEventListener('click', startTutteEmbeddingAnimation);
+        document.getElementById('runEmbedding-de').addEventListener('click', startTutteEmbeddingAnimation);
+        document.getElementById('runEmbedding-be').addEventListener('click', startTutteEmbeddingAnimation);
+        
+        document.getElementById('stopAnimation').addEventListener('click', stopAnimation);
+        document.getElementById('stopAnimation-de').addEventListener('click', stopAnimation);
+        document.getElementById('stopAnimation-be').addEventListener('click', stopAnimation);
+        
+        // Parse edge list and render graph
         function parseAndRenderGraph() {
             try {
                 stopAnimation();
@@ -256,7 +473,7 @@
                 const edgeListText = document.getElementById('edge-list').value.trim();
                 const lines = edgeListText.split('\n');
                 
-                // Создаем вершины и рёбра
+                // Create vertices and edges
                 const nodeMap = new Map();
                 const edgeSet = new Set();
                 edges = [];
@@ -264,25 +481,25 @@
                 for (const line of lines) {
                     if (!line.trim()) continue;
                     
-                    const parts = line.split('-');
+                    const parts = line.split(' ');
                     if (parts.length !== 2) {
-                        throw new Error(`Неверный формат ребра: ${line} (используйте формат вершина1-вершина2)`);
+                        throw new Error(formatString(translations[currentLanguage].error, `Invalid edge format: ${line}`));
                     }
                     
                     const sourceId = parseInt(parts[0].trim());
                     const targetId = parseInt(parts[1].trim());
                     
                     if (isNaN(sourceId) || isNaN(targetId)) {
-                        throw new Error(`Неверный идентификатор вершины в ребре: ${line}`);
+                        throw new Error(formatString(translations[currentLanguage].error, `Invalid vertex ID in edge: ${line}`));
                     }
                     
-                    // Добавляем вершины в узлы если их еще нет
+                    // Add vertices if they don't exist
                     if (!nodeMap.has(sourceId)) {
                         nodeMap.set(sourceId, {
                             id: sourceId,
                             x: 300 + 200 * Math.cos(2 * Math.PI * sourceId / 12),
                             y: 300 + 200 * Math.sin(2 * Math.PI * sourceId / 12),
-                            fixed: false
+                            pinned: false
                         });
                     }
                     
@@ -291,11 +508,11 @@
                             id: targetId,
                             x: 300 + 200 * Math.cos(2 * Math.PI * targetId / 12),
                             y: 300 + 200 * Math.sin(2 * Math.PI * targetId / 12),
-                            fixed: false
+                            pinned: false
                         });
                     }
                     
-                    // Добавляем ребро
+                    // Add edge
                     const edgeKey = `${Math.min(sourceId, targetId)}-${Math.max(sourceId, targetId)}`;
                     if (!edgeSet.has(edgeKey)) {
                         edgeSet.add(edgeKey);
@@ -308,26 +525,26 @@
                 
                 nodes = Array.from(nodeMap.values());
                 
-                // Расположим вершины в круге
+                // Arrange vertices in a circle
                 nodes.forEach((node, i) => {
                     node.x = 300 + 200 * Math.cos(2 * Math.PI * i / nodes.length);
                     node.y = 300 + 200 * Math.sin(2 * Math.PI * i / nodes.length);
                 });
                 
                 renderGraph();
-                updateStatus(`Граф загружен: ${nodes.length} вершин, ${edges.length} рёбер`);
+                updateStatus(formatString(translations[currentLanguage].graphLoaded, nodes.length, edges.length));
             } catch (error) {
-                updateStatus(`Ошибка: ${error.message}`, true);
+                updateStatus(formatString(translations[currentLanguage].error, error.message), true);
             }
         }
         
-        // Отрисовка графа
+        // Render graph
         function renderGraph() {
-            // Очистка SVG
+            // Clear SVG
             document.getElementById('edges').innerHTML = '';
             document.getElementById('nodes').innerHTML = '';
             
-            // Отрисовка рёбер
+            // Draw edges
             edges.forEach(edge => {
                 const source = nodes.find(n => n.id === edge.source);
                 const target = nodes.find(n => n.id === edge.target);
@@ -343,12 +560,12 @@
                 document.getElementById('edges').appendChild(edgeElement);
             });
             
-            // Отрисовка вершин
+            // Draw vertices
             nodes.forEach(node => {
                 const nodeGroup = document.createElementNS('http://www.w3.org/2000/svg', 'g');
                 nodeGroup.classList.add('node');
-                if (node.fixed) {
-                    nodeGroup.classList.add('fixed-node');
+                if (node.pinned) {
+                    nodeGroup.classList.add('pinned-node');
                 }
                 nodeGroup.setAttribute('data-id', node.id);
                 
@@ -356,7 +573,7 @@
                 circle.setAttribute('cx', node.x);
                 circle.setAttribute('cy', node.y);
                 circle.setAttribute('r', 8);
-                circle.setAttribute('fill', node.fixed ? '#ff9800' : '#4CAF50');
+                circle.setAttribute('fill', node.pinned ? '#ff9800' : '#4CAF50');
                 circle.setAttribute('stroke', '#333');
                 circle.setAttribute('stroke-width', '2');
                 
@@ -372,23 +589,23 @@
                 nodeGroup.appendChild(text);
                 document.getElementById('nodes').appendChild(nodeGroup);
                 
-                // Добавление возможности перетаскивания
+                // Add drag functionality
                 nodeGroup.addEventListener('mousedown', startDrag);
-                // Двойной клик для фиксации
-                nodeGroup.addEventListener('dblclick', toggleFixed);
+                // Double-click to pin
+                nodeGroup.addEventListener('dblclick', togglepinned);
                 
-                // Добавляем подсказку при наведении
+                // Add tooltip on hover
                 nodeGroup.addEventListener('mouseover', showTooltip);
                 nodeGroup.addEventListener('mouseout', hideTooltip);
             });
         }
         
-        // Функции для перетаскивания вершин
+        // Vertex dragging functions
         let selectedNode = null;
         let offset = { x: 0, y: 0 };
         
         function startDrag(event) {
-            if (isEmbeddingRunning) return; // Запрещаем перетаскивание во время анимации
+            if (isEmbeddingRunning) return; // Prevent dragging during animation
             
             const nodeId = parseInt(this.getAttribute('data-id'));
             selectedNode = nodes.find(n => n.id === nodeId);
@@ -418,7 +635,7 @@
             selectedNode.x = svgP.x + offset.x;
             selectedNode.y = svgP.y + offset.y;
             
-            // Ограничение в пределах SVG
+            // Limit to SVG boundaries
             selectedNode.x = Math.max(10, Math.min(590, selectedNode.x));
             selectedNode.y = Math.max(10, Math.min(590, selectedNode.y));
             
@@ -431,19 +648,23 @@
             document.removeEventListener('mouseup', endDrag);
         }
         
-        // Функция для фиксации/освобождения вершин
-        function toggleFixed(event) {
-            if (isEmbeddingRunning) return; // Запрещаем изменение во время анимации
+        // Function to pin/unpin vertices
+        function togglepinned(event) {
+            if (isEmbeddingRunning) return; // Prevent changes during animation
             
             const nodeId = parseInt(this.getAttribute('data-id'));
             const node = nodes.find(n => n.id === nodeId);
-            node.fixed = !node.fixed;
+            node.pinned = !node.pinned;
             
             renderGraph();
-            updateStatus(`Вершина ${nodeId} ${node.fixed ? 'закреплена' : 'освобождена'}`);
+            updateStatus(formatString(
+                translations[currentLanguage].vertexPinnedToggle, 
+                nodeId, 
+                node.pinned ? translations[currentLanguage].pinned : translations[currentLanguage].unpinned
+            ));
         }
         
-        // Показ/скрытие подсказки
+        // Show/hide tooltip
         function showTooltip(event) {
             const nodeId = parseInt(this.getAttribute('data-id'));
             const node = nodes.find(n => n.id === nodeId);
@@ -452,178 +673,162 @@
             tooltip.style.display = 'block';
             tooltip.style.left = (event.pageX + 10) + 'px';
             tooltip.style.top = (event.pageY + 10) + 'px';
-            tooltip.textContent = `Вершина ${nodeId} ${node.fixed ? '(закреплена)' : ''}`;
+            tooltip.textContent = node.pinned ? 
+                formatString(translations[currentLanguage].vertexPinned, nodeId) : 
+                formatString(translations[currentLanguage].vertex, nodeId);
         }
         
         function hideTooltip() {
             document.getElementById('tooltip').style.display = 'none';
         }
         
-        // Функция для генерации случайного расположения
+        // Generate random layout
         function randomizePositions() {
             stopAnimation();
             
             nodes.forEach(node => {
-                if (!node.fixed) {
+                if (!node.pinned) {
                     node.x = 50 + Math.random() * 500;
                     node.y = 50 + Math.random() * 500;
                 }
             });
             
             renderGraph();
-            updateStatus('Вершины случайно расположены');
+            updateStatus(translations[currentLanguage].randomPositions);
         }
-        
-        // Сброс расположения
+
+        // Reset layout
         function resetGraph() {
             stopAnimation();
             
             if (nodes.length > 0) {
                 nodes.forEach((node, i) => {
-                    if (!node.fixed) {
+                    if (!node.pinned) {
                         node.x = 300 + 200 * Math.cos(2 * Math.PI * i / nodes.length);
                         node.y = 300 + 200 * Math.sin(2 * Math.PI * i / nodes.length);
                     }
                 });
-                
+
                 renderGraph();
-                updateStatus('Граф сброшен в начальное положение');
+                updateStatus(translations[currentLanguage].graphReset);
             }
         }
         
-        // Функция для вычисления следующей итерации алгоритма Татта
         function calculateNextPositions() {
             const newPositions = [];
             
             nodes.forEach(node => {
-                if (node.fixed) {
+                if (node.pinned) {
                     newPositions.push({ x: node.x, y: node.y });
                     return;
                 }
-                
-                // Найти всех соседей
+
                 const neighbors = edges
                     .filter(e => e.source === node.id || e.target === node.id)
                     .map(e => e.source === node.id ? nodes.find(n => n.id === e.target) : nodes.find(n => n.id === e.source));
-                
+
                 if (neighbors.length === 0) {
                     newPositions.push({ x: node.x, y: node.y });
                     return;
                 }
-                
-                // Расчёт барицентрической координаты
+
                 let sumX = 0, sumY = 0;
                 neighbors.forEach(neighbor => {
                     sumX += neighbor.x;
                     sumY += neighbor.y;
                 });
-                
+
                 newPositions.push({
                     x: sumX / neighbors.length,
                     y: sumY / neighbors.length
                 });
             });
-            
+
             return newPositions;
         }
-        
-        // Функция для плавного перемещения вершин к целевым позициям
+
         function animateToTargetPositions() {
             const transitionSpeed = document.getElementById('transitionSpeed').value / 100;
             let allNodesReachedTarget = true;
-            
-            // Обновляем позиции с интерполяцией
+
             nodes.forEach((node, i) => {
-                if (node.fixed) return;
-                
+                if (node.pinned) return;
+
                 const dx = targetPositions[i].x - node.x;
                 const dy = targetPositions[i].y - node.y;
-                
-                // Если разница ничтожно мала, считаем что вершина достигла цели
+
                 if (Math.abs(dx) < 0.1 && Math.abs(dy) < 0.1) {
                     node.x = targetPositions[i].x;
                     node.y = targetPositions[i].y;
                 } else {
-                    // Иначе применяем движение с затуханием
                     node.x += dx * transitionSpeed;
                     node.y += dy * transitionSpeed;
                     allNodesReachedTarget = false;
                 }
             });
-            
+
             renderGraph();
-            
-            // Если анимация всё ещё активна, продолжаем
+
             if (isEmbeddingRunning) {
-                // Если все вершины достигли целевых позиций, рассчитываем новые
                 if (allNodesReachedTarget) {
                     currentIteration++;
-                    updateStatus(`Выполняется укладка (${currentIteration}/${totalIterations})`);
-                    
+                    updateStatus(formatString(translations[currentLanguage].embeddingRunning, currentIteration, totalIterations));
+
                     if (currentIteration >= totalIterations) {
                         stopAnimation();
-                        updateStatus(`Укладка завершена (${totalIterations} итераций)`);
+                        updateStatus(formatString(translations[currentLanguage].embeddingCompleted, totalIterations));
                         return;
                     }
-                    
-                    // Рассчитываем новые целевые позиции
+
                     targetPositions = calculateNextPositions();
                 }
-                
-                // Применяем следующий кадр анимации
+
                 animationFrameId = requestAnimationFrame(animateToTargetPositions);
             }
         }
-        
-        // Функция для запуска анимированной укладки графа
+
         function startTutteEmbeddingAnimation() {
             stopAnimation();
-            
+
             if (nodes.length === 0) {
-                updateStatus('Граф пуст. Сначала загрузите граф.', true);
+                updateStatus(translations[currentLanguage].missingGraph, true);
                 return;
             }
-            
-            // Проверка на наличие закрепленных вершин
-            const fixedNodesCount = nodes.filter(n => n.fixed).length;
-            if (fixedNodesCount < 3) {
-                updateStatus('Для укладки Татта необходимо закрепить минимум 3 вершины. Используйте двойной клик, чтобы закрепить вершины.', true);
+
+            const pinnedNodesCount = nodes.filter(n => n.pinned).length;
+            if (pinnedNodesCount < 3) {
+                updateStatus(translations[currentLanguage].notEnoughPinned, true);
                 return;
             }
-            
+
             currentIteration = 0;
             totalIterations = parseInt(document.getElementById('iterations').value);
-            
-            // Включаем кнопку остановки анимации
+
             document.getElementById('stopAnimation').disabled = false;
             document.getElementById('runEmbedding').disabled = true;
             isEmbeddingRunning = true;
-            
-            updateStatus(`Запущена анимация укладки (0/${totalIterations})`);
-            
-            // Рассчитываем целевые позиции для первой итерации
+
             targetPositions = calculateNextPositions();
-            
-            // Запускаем анимацию
+
             animationFrameId = requestAnimationFrame(animateToTargetPositions);
         }
-        
+
         function stopAnimation() {
             if (animationFrameId) {
                 cancelAnimationFrame(animationFrameId);
                 animationFrameId = null;
                 isEmbeddingRunning = false;
-                
+
                 document.getElementById('stopAnimation').disabled = true;
                 document.getElementById('runEmbedding').disabled = false;
-                updateStatus('Анимация остановлена');
+                updateStatus(translations[currentLanguage].animationStopped);
             }
         }
-        
+
         function updateStatus(message, isError = false) {
             const statusElement = document.getElementById('status');
             statusElement.textContent = message;
-            
+
             if (isError) {
                 statusElement.style.borderLeft = '3px solid #ff4500';
                 statusElement.style.backgroundColor = '#fff0f0';
@@ -632,10 +837,9 @@
                 statusElement.style.backgroundColor = '#f0f8ff';
             }
         }
-        
-        // Инициализация страницы
+
         document.addEventListener('DOMContentLoaded', function() {
-            parseAndRenderGraph(); // Загружаем граф по умолчанию при старте
+            parseAndRenderGraph();
         });
     </script>
 </body>
