@@ -634,28 +634,28 @@
             
             selectedNode.x = svgP.x + offset.x;
             selectedNode.y = svgP.y + offset.y;
-            
+
             // Limit to SVG boundaries
             selectedNode.x = Math.max(10, Math.min(590, selectedNode.x));
             selectedNode.y = Math.max(10, Math.min(590, selectedNode.y));
-            
+
             renderGraph();
         }
-        
+
         function endDrag() {
             selectedNode = null;
             document.removeEventListener('mousemove', drag);
             document.removeEventListener('mouseup', endDrag);
         }
-        
+
         // Function to pin/unpin vertices
         function togglepinned(event) {
             if (isEmbeddingRunning) return; // Prevent changes during animation
-            
+
             const nodeId = parseInt(this.getAttribute('data-id'));
             const node = nodes.find(n => n.id === nodeId);
             node.pinned = !node.pinned;
-            
+
             renderGraph();
             updateStatus(formatString(
                 translations[currentLanguage].vertexPinnedToggle, 
@@ -663,36 +663,39 @@
                 node.pinned ? translations[currentLanguage].pinned : translations[currentLanguage].unpinned
             ));
         }
-        
+
         // Show/hide tooltip
         function showTooltip(event) {
+            var rect = document.getElementById('graph-svg').getBoundingClientRect();
             const nodeId = parseInt(this.getAttribute('data-id'));
             const node = nodes.find(n => n.id === nodeId);
-            
+
+            console.log(event.pageX, event.pageY);
+
             const tooltip = document.getElementById('tooltip');
             tooltip.style.display = 'block';
-            tooltip.style.left = (event.pageX + 10) + 'px';
-            tooltip.style.top = (event.pageY + 10) + 'px';
+            tooltip.style.left = (event.pageX - rect.left + 10) + 'px';
+            tooltip.style.top = (event.pageY - rect.top + 10) + 'px';
             tooltip.textContent = node.pinned ? 
                 formatString(translations[currentLanguage].vertexPinned, nodeId) : 
                 formatString(translations[currentLanguage].vertex, nodeId);
         }
-        
+
         function hideTooltip() {
             document.getElementById('tooltip').style.display = 'none';
         }
-        
+
         // Generate random layout
         function randomizePositions() {
             stopAnimation();
-            
+
             nodes.forEach(node => {
                 if (!node.pinned) {
                     node.x = 50 + Math.random() * 500;
                     node.y = 50 + Math.random() * 500;
                 }
             });
-            
+
             renderGraph();
             updateStatus(translations[currentLanguage].randomPositions);
         }
@@ -700,7 +703,7 @@
         // Reset layout
         function resetGraph() {
             stopAnimation();
-            
+
             if (nodes.length > 0) {
                 nodes.forEach((node, i) => {
                     if (!node.pinned) {
@@ -716,7 +719,7 @@
         
         function calculateNextPositions() {
             const newPositions = [];
-            
+
             nodes.forEach(node => {
                 if (node.pinned) {
                     newPositions.push({ x: node.x, y: node.y });
