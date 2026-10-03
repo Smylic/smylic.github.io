@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Шифровка</title>
+<style>
+:root{--bg:#e9eef2;--panel:#f7f9fb;--ink:#1b2833;--mute:#62737f;--line:#c3ced6;--acc:#0e7490;--accbg:#cdeaf1;--dup:#b45309;--dupbg:#fde8c8;--ok:#15803d}
+@media (prefers-color-scheme:dark){:root{--bg:#10181e;--panel:#18232b;--ink:#e3ebf0;--mute:#8fa1ad;--line:#33444f;--acc:#5cc8e0;--accbg:#173f4b;--dup:#f5b25c;--dupbg:#4a3414;--ok:#6fd48f}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+main{max-width:980px;margin:0 auto;padding:20px 16px 48px}
+h1{font:700 28px/1.2 Georgia,"Times New Roman",serif;margin:0 0 4px}
+.sub{color:var(--mute);margin:0 0 18px}
+button,select,input{font:inherit;color:inherit}
+button,.btn,select,input[type=number]{background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:5px 10px}
+button{cursor:pointer}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:18px;margin-bottom:16px}
+.ctrl{display:flex;flex-wrap:wrap;gap:10px 16px;align-items:center}
+.ctrl .panel{margin:0}
+#flags{display:flex;gap:6px}
+#flags button{padding:4px;line-height:0}
+#flags button[aria-pressed=true]{border-color:var(--acc);background:var(--accbg);outline:2px solid var(--acc)}
+#flags svg{width:36px;height:24px;border:1px solid var(--line);display:block}
+.bar{display:flex;justify-content:space-between;align-items:baseline;gap:12px;flex-wrap:wrap;margin-bottom:12px;color:var(--mute)}
+#time{font-variant-numeric:tabular-nums;color:var(--ink);font-weight:600}
+#field{display:flex;flex-wrap:wrap;gap:14px 26px;padding-right:14px}
+.word{display:flex;flex-wrap:wrap;gap:14px 4px;max-width:100%}
+.nb{display:flex;gap:4px}
+.wrapend{position:relative}
+.wrapend::after{content:'↵';position:absolute;right:-13px;bottom:10px;color:var(--mute);font-size:14px;line-height:1}
+.cell{width:38px;text-align:center;border-radius:5px;padding:2px 0 0}
+.cell:not(.known){cursor:pointer}
+.cell .n{font:13px/1.4 ui-monospace,Consolas,monospace;color:var(--mute)}
+.cell .l{height:38px;font:600 24px/36px Georgia,serif;border-bottom:2px solid var(--ink);text-transform:uppercase}
+.cell.known .l{color:var(--acc)}
+.cell.act,.col.act{background:var(--accbg)}
+.cell.act .l{border-color:var(--acc)}
+.cell.dup .l,.col.dup select{color:var(--dup)}
+.cell.dup,.col.dup{background:var(--dupbg)}
+.punct{align-self:flex-end;font:600 24px/36px Georgia,serif;padding:0 1px 2px}
+.cell.cur{outline:2px solid var(--acc)}
+h2{font:600 16px/1.3 system-ui,sans-serif;margin:0 0 10px}
+#table{display:flex;flex-wrap:wrap;gap:6px}
+.col{text-align:center;border:1px solid var(--line);border-radius:6px;padding:4px 4px 6px;width:62px}
+.col .n{font:14px/1.5 ui-monospace,Consolas,monospace;font-weight:700}
+.col select{width:100%;margin-top:2px;padding:3px 0;text-align:center;text-transform:uppercase;cursor:pointer}
+.col.act select{border-color:var(--acc)}
+#done.ok{color:var(--ok);font-weight:600}
+.row{display:flex;gap:8px;flex-wrap:wrap}
+label{display:inline-flex;gap:8px;align-items:center}
+.set{display:grid;gap:10px}
+.help{color:var(--mute);font-size:14px;margin:12px 0 0}
+[hidden]{display:none!important}
+:focus-visible{outline:2px solid var(--acc);outline-offset:2px}
+@media (max-width:520px){.cell{width:32px}.word{column-gap:2px}#field{gap:12px 18px}}
+</style>
+</head>
+<body>
+<main>
+<h1 data-i="h1"></h1>
+<p class="sub" data-i="sub"></p>
+
+<section class="panel ctrl">
+  <div id="flags" role="group" aria-label="Язык"></div>
+  <label><span data-i="lvlLabel"></span> <select id="lvl"></select></label>
+  <label><span data-i="no"></span> <input id="num" type="number" min="1" style="width:5em"> <span data-i="of"></span> <span id="tot"></span></label>
+  <button id="bnext" data-i="next"></button><button id="brand" data-i="rand"></button>
+  <span id="done"></span>
+</section>
+
+<section class="panel">
+  <div class="bar"><span id="title"></span><span><span data-i="time"></span>: <span id="time">0:00</span></span></div>
+  <div id="field" aria-label="Шифрованный текст"></div>
+</section>
+
+<section class="panel">
+  <h2 data-i="tbl"></h2>
+  <div id="table"></div>
+</section>
+
+<section class="panel">
+  <h2 data-i="set"></h2>
+  <div class="set">
+    <label><input type="checkbox" id="optDup"> <span data-i="dup"></span></label>
+    <label><span data-i="adv"></span> <select id="optAdv">
+      <option value="off" data-i="advOff"></option>
+      <option value="next" data-i="advNext"></option>
+      <option value="free" data-i="advFree"></option></select></label>
+    <label class="be" hidden><span data-i="script"></span> <select id="optScript">
+      <option value="cyr" data-i="scriptC"></option><option value="lat" data-i="scriptL"></option></select></label>
+    <label class="be lat" hidden><span data-i="orth"></span> <select id="optOrth">
+      <option value="l" data-i="o1"></option>
+      <option value="ł" data-i="o2"></option>
+      <option value="old" data-i="o3"></option></select></label>
+  </div>
+  <p class="help" data-i="help"></p>
+</section>
+</main>
+
+<script src="puzzles/en.js"></script>
+<script src="puzzles/de.js"></script>
+<script src="puzzles/be.js"></script>
+<script>
+const $ = id => document.getElementById(id);
+const ALPHA = {
+  en:'abcdefghijklmnopqrstuvwxyz',
+  de:'abcdefghijklmnopqrstuvwxyzäöüß',
+  bec:'абвгдеёжзійклмнопрстуўфхцчшыьэюя',
+  bel:'abcćčdefghijklĺłmnńoprsśštuŭvyzźžż'
+};
+const PASS = window.PUZZLES;   // PASS[lang][level] = array of passages, see puzzles/*.js
+const FLAGS = {
+  en:['English','<rect width="60" height="30" fill="#012169"/><path d="M0 0l60 30M60 0L0 30" stroke="#fff" stroke-width="6"/><path d="M0 0l60 30M60 0L0 30" stroke="#C8102E" stroke-width="2"/><path d="M30 0v30M0 15h60" stroke="#fff" stroke-width="10"/><path d="M30 0v30M0 15h60" stroke="#C8102E" stroke-width="6"/>','0 0 60 30'],
+  de:['Deutsch','<rect width="5" height="1" fill="#000"/><rect y="1" width="5" height="1" fill="#D00"/><rect y="2" width="5" height="1" fill="#FFCE00"/>','0 0 5 3'],
+  be:['Беларуская','<rect width="3" height="2" fill="#fff"/><rect y="0.667" width="3" height="0.667" fill="#D22730"/>','0 0 3 2']
+};
+const LV = [{long:1,h:4},{long:0,h:2},{long:1,h:0},{long:0,h:0},{long:1,h:0,bare:1},{long:0,h:0,bare:1}];
+const I18N = {
+  en:{h1:'Cipher',sub:'Every letter of the text is replaced by a number. Identical letters are replaced by identical numbers, different letters by different numbers. Restore the original passage.',lvlLabel:'Difficulty level',
+    lv:['Easiest','Below medium','Medium','Above medium','Hard','Hardest'],no:'No.',of:'of',next:'Next',rand:'Random',time:'Time',
+    tbl:'Mapping table',set:'Settings',dup:'Highlight identical letters mistakenly assigned to different numbers',adv:'After choosing a letter',
+    advOff:'stay in place',advNext:'go to the next number',advFree:'go to the next free number',
+    solved:'Solved!',best:'best',sel:'Letter for number ',
+    help:'Keyboard: ← → move to the neighbouring letter in the field; after the last letter comes the table, then the field again. Type digits to jump to a number. A letter key assigns that letter, Backspace or Delete clears it, ↑ ↓ cycle through the letters. On the hard levels the space bar inserts or removes a space after the current letter.'},
+  de:{h1:'Chiffre',sub:'Jeder Buchstabe des Textes wurde durch eine Zahl ersetzt. Gleiche Buchstaben wurden durch gleiche Zahlen ersetzt, verschiedene Buchstaben durch verschiedene Zahlen. Stelle den Originaltext wieder her.',lvlLabel:'Schwierigkeitsstufe',
+    lv:['Am einfachsten','Unter mittel','Mittel','Über mittel','Schwer','Am schwersten'],no:'Nr.',of:'von',next:'Nächstes',rand:'Zufällig',time:'Zeit',
+    tbl:'Zuordnungstabelle',set:'Einstellungen',dup:'Gleiche Buchstaben hervorheben, die fälschlich verschiedenen Zahlen zugewiesen wurden',adv:'Nach der Wahl eines Buchstabens',
+    advOff:'an Ort und Stelle bleiben',advNext:'zur nächsten Zahl wechseln',advFree:'zur nächsten freien Zahl wechseln',
+    solved:'Gelöst!',best:'Bestzeit',sel:'Buchstabe für Zahl ',
+    help:'Tastatur: ← → wechseln zum Nachbarbuchstaben im Feld; nach dem letzten Buchstaben folgt die Tabelle, danach wieder das Feld. Ziffern springen zu einer Zahl. Eine Buchstabentaste weist den Buchstaben zu, Backspace oder Entf löscht ihn, ↑ ↓ blättern im Kreis durch die Buchstaben. Auf den schweren Stufen fügt die Leertaste nach dem aktuellen Buchstaben ein Leerzeichen ein oder entfernt es.'},
+  be:{h1:'Шыфроўка',sub:'Кожная літара тэксту замененая лікам. Аднолькавыя літары — аднолькавымі лікамі, розныя літары — рознымі лікамі. Аднавіце зыходную фразу.',lvlLabel:'Узровень складанасці',
+    lv:['Самы просты','Ніжэй за сярэдні','Сярэдні','Вышэй за сярэдні','Складаны','Самы складаны'],no:'№',of:'з',next:'Наступная',rand:'Выпадковая',time:'Час',
+    tbl:'Табліца адпаведнасці',set:'Налады',dup:'Падсвятляць аднолькавыя літары, памылкова прызначаныя розным лікам',adv:'Пасля выбару літары',
+    advOff:'заставацца на месцы',advNext:'перайсці да наступнага ліку',advFree:'перайсці да наступнага вольнага ліку',
+    script:'Беларускае пісьмо',scriptC:'кірыліца',scriptL:'лацінка',orth:'Лацінка',o1:'Сучасная: l / ĺ',o2:'Сучасная: ł / l',o3:'Старая: cz, sz, ż, ł',
+    solved:'Разгадана!',best:'лепшы',sel:'Літара для ліку ',
+    help:'Клавіятура: ← → — суседняя літара ў полі, пасля апошняй літары ідзе табліца, потым зноў поле. Набор лічбаў — пераход да ліку. Літара — прызначыць, Backspace або Delete — прыбраць, ↑ ↓ — перабіраць літары па коле. На складаных узроўнях прабел у полі ўстаўляе або прыбірае прабел пасля бягучай літары.'}
+};
+// ---------- cookie ----------
+const mem = {};
+function getCookie(name, def){
+  try{
+    const m = document.cookie.split('; ').find(c => c.startsWith(name + '='));
+    if(m) return JSON.parse(decodeURIComponent(m.slice(name.length + 1)));
+  }catch(e){}
+  return name in mem ? mem[name] : def;
+}
+function setCookie(name, val){
+  mem[name] = val;
+  try{ document.cookie = name + '=' + encodeURIComponent(JSON.stringify(val)) + '; max-age=31536000; path=/; SameSite=Lax'; }catch(e){}
+}
+const S = Object.assign({dup:true, adv:'free', lang:'en', lvl:2, script:'cyr', orth:'l'}, getCookie('settings', {}));
+const results = getCookie('results', {});
+const saveS = () => setCookie('settings', S);
+
+// ---------- Belarusian Latin transliteration ----------
+const LAT = {а:'a',б:'b',в:'v',г:'h',д:'d',е:'e',ё:'o',ж:'ž',з:'z',і:'i',й:'j',к:'k',л:'l',м:'m',н:'n',о:'o',п:'p',р:'r',с:'s',т:'t',у:'u',ў:'ŭ',ф:'f',х:'ch',ц:'c',ч:'č',ш:'š',ы:'y',э:'e',ю:'u',я:'a'};
+const IOT = {е:'ie',ё:'io',ю:'iu',я:'ia'}, JOT = {е:'je',ё:'jo',ю:'ju',я:'ja'};
+const SOFT = {l:'ĺ',ł:'l',n:'ń',c:'ć',s:'ś',z:'ź'}, VOW = 'аеёіоуыэюя';
+function toLat(t, o){
+  let out = '', prev = '';
+  for(const ch of t){
+    const c = ch.toLowerCase(), up = ch !== c;
+    if(c === 'ь'){
+      const last = out.slice(-1), sl = last.toLowerCase();
+      if(SOFT[sl]) out = out.slice(0, -1) + (last !== sl ? SOFT[sl].toUpperCase() : SOFT[sl]);
+      prev = c; continue;
+    }
+    if(!(c in LAT)){ out += ch; prev = c; continue; }
+    let r = LAT[c];
+    if(c in IOT) r = (prev in LAT && !VOW.includes(prev)) ? IOT[c] : JOT[c];
+    if(c === 'л') r = o === 'l' ? 'l' : 'ł';
+    if(o === 'old'){ if(c === 'ч') r = 'cz'; if(c === 'ш') r = 'sz'; if(c === 'ж') r = 'ż'; }
+    if((c in IOT || c === 'і') && out.slice(-1).toLowerCase() === 'ł') out = out.slice(0, -1) + (out.slice(-1) === 'Ł' ? 'L' : 'l');
+    out += up ? r[0].toUpperCase() + r.slice(1) : r; prev = c;
+  }
+  return out;
+}
+const T = k => { const s = I18N[S.lang][k] || ''; return S.lang === 'be' && S.script === 'lat' ? toLat(s, S.orth) : s; };
+const lvName = i => { const s = I18N[S.lang].lv[i]; return S.lang === 'be' && S.script === 'lat' ? toLat(s, S.orth) : s; };
+const setTitle = () => $('title').textContent = FLAGS[S.lang][0] + ' · ' + lvName(S.lvl);
+function applyUI(){
+  document.querySelectorAll('[data-i]').forEach(el => el.textContent = T(el.dataset.i));
+  $('lvl').innerHTML = LV.map((_, i) => '<option value="' + i + '">' + lvName(i) + '</option>').join('');
+  $('lvl').value = S.lvl;
+  document.title = T('h1'); document.documentElement.lang = S.lang;
+  if(items) setTitle();
+}
+
+// ---------- cipher ----------
+function rng(a){return()=>{a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
+function shuf(arr, r){
+  for(let i = arr.length - 1; i > 0; i--){ const j = Math.floor(r() * (i + 1)); [arr[i], arr[j]] = [arr[j], arr[i]]; }
+  return arr;
+}
+const alphaKey = () => S.lang === 'be' ? (S.script === 'lat' ? 'bel' : 'bec') : S.lang;
+const pool = () => (PASS[S.lang] || [])[S.lvl] || [];
+const rkey = i => S.lang + ':' + i + ':' + S.lvl;
+
+// ---------- state ----------
+let knownSet, knownCells, lastMs, P, K, idx, alpha, items, nums, answer, assign, gaps, u, active, solved, start, cells, cols, buf = '', bufTimer;
+
+function fmtTime(ms){
+  const t = Math.floor(ms / 100) / 10, m = Math.floor(t / 60), s = (t - m * 60).toFixed(1);
+  return m + ':' + (s.length < 4 ? '0' : '') + s;
+}
+
+function load(k){
+  P = pool(); if(!P.length) return;
+  K = Math.max(1, Math.min(P.length, k || 1)); idx = K - 1;
+  const L = LV[S.lvl], ak = alphaKey(); alpha = ALPHA[ak];
+  let text = P[idx];
+  if(ak === 'bel') text = toLat(text, S.orth);
+  const seed = (idx + 1) * 7919 + {en:1, de:2, be:3}[S.lang] * 104729 + S.lvl * 15485863;
+  const nn = shuf(alpha.split('').map((_, i) => i + 1), rng(seed)), code = {};
+  [...alpha].forEach((l, i) => code[l] = nn[i]);
+
+  items = [...text.toLowerCase()].map(ch => alpha.includes(ch) ? {t:'l', ch, n:code[ch]} : ch === ' ' ? {t:'s'} : {t:'p', ch});
+  const used = [...new Set(items.filter(i => i.t === 'l').map(i => i.ch))];
+  const known = new Set(shuf(used.slice(), rng(seed + 5)).slice(0, Math.min(L.h, used.length - 1)));
+  knownSet = known;
+  items.forEach(i => { if(i.t === 'l' && known.has(i.ch)) i.t = 'k'; });
+  answer = {};
+  items.filter(i => i.t === 'l').forEach(i => answer[i.n] = i.ch);
+  nums = Object.keys(answer).map(Number).sort((a, b) => a - b);
+  assign = {}; gaps = new Set(); solved = false; u = 0; start = Date.now(); buf = '';
+
+  const table = $('table'); table.innerHTML = ''; cols = {};
+  nums.forEach(n => {
+    const col = document.createElement('div'); col.className = 'col';
+    const sel = document.createElement('select'); sel.setAttribute('aria-label', T('sel') + n);
+    sel.innerHTML = '<option value="">—</option>' + [...alpha].map(l => '<option value="' + l + '">' + l + '</option>').join('');
+    col.innerHTML = '<div class="n">' + n + '</div>'; col.appendChild(sel);
+    sel.onfocus = () => { if(active !== n) setNum(n); };
+    sel.onchange = () => { if(solved) return; assign[n] = sel.value; update(); if(sel.value) advance(); };
+    col._sel = sel; cols[n] = col; table.appendChild(col);
+  });
+
+  renderField();
+  active = cells[0]._n;
+  setTitle();
+  $('num').value = K; $('num').max = P.length; $('tot').textContent = P.length;
+  update(); cols[active]._sel.focus();
+}
+
+function renderField(){
+  const hide = LV[S.lvl].bare && !solved, field = $('field');
+  field.innerHTML = ''; cells = []; knownCells = [];
+  let wd;
+  const newWord = () => { wd = document.createElement('div'); wd.className = 'word'; field.appendChild(wd); };
+  newWord();
+  items.forEach(it => {
+    if(it.t === 's'){ if(!hide) newWord(); return; }
+    if(it.t === 'p'){
+      if(hide) return;
+      const p = document.createElement('div'); p.className = 'punct'; p.textContent = it.ch;
+      const last = wd.lastElementChild;   // punctuation never separates from the preceding letter
+      if(last && last.classList.contains('cell')){
+        const g = document.createElement('div'); g.className = 'nb';
+        wd.replaceChild(g, last); g.append(last, p);
+      }else if(last && last.classList.contains('nb')) last.appendChild(p);
+      else wd.appendChild(p);
+      return;
+    }
+    const c = document.createElement('div');
+    c.className = 'cell';
+    if(it.t === 'k'){
+      c.classList.add('known'); c.innerHTML = '<div class="n">&nbsp;</div><div class="l"></div>';
+      c.querySelector('.l').textContent = it.ch; knownCells.push(c);
+    }else{
+      c.innerHTML = '<div class="n">' + it.n + '</div><div class="l"></div>';
+      c._n = it.n; c._i = cells.length; c.onclick = () => setU(c._i);
+      cells.push(c);
+    }
+    wd.appendChild(c);
+    if(hide && it.t === 'l' && gaps.has(c._i)) newWord();
+  });
+  markWraps();
+}
+// mark the end of a line inside a word: there is no space, the word continues on the next line
+function markWraps(){
+  document.querySelectorAll('#field .word').forEach(w => {
+    const ch = [...w.children];
+    ch.forEach((el, i) => el.classList.toggle('wrapend', el.classList.contains('cell') && i < ch.length - 1 && ch[i + 1].offsetTop > el.offsetTop + 5));
+  });
+}
+window.addEventListener('resize', markWraps);
+
+// u: 0..N-1 = field cells, N..N+M-1 = table columns; navigation wraps around
+function setU(x){
+  if(solved) return;
+  const N = cells.length, T = N + nums.length;
+  u = ((x % T) + T) % T;
+  active = u < N ? cells[u]._n : nums[u - N];
+  update();
+  const sel = cols[active]._sel;
+  if(document.activeElement !== sel) sel.focus();
+}
+function setNum(n){
+  const N = cells.length;
+  if(u >= N) return setU(N + nums.indexOf(n));
+  if(cells[u]._n === n) return setU(u);
+  const i = cells.findIndex((c, i) => i > u && c._n === n);
+  setU(i >= 0 ? i : cells.findIndex(c => c._n === n));
+}
+function advance(){
+  if(S.adv === 'off' || solved) return;
+  const N = cells.length, inF = u < N, base = inF ? 0 : N, len = inF ? N : nums.length;
+  for(let d = 1; d <= len; d++){
+    const j = (u - base + d) % len, n = inF ? cells[j]._n : nums[j];
+    if(S.adv === 'next' || !assign[n]){ setU(base + j); return; }
+  }
+}
+
+function update(){
+  const cnt = {};
+  nums.forEach(n => { const l = assign[n]; if(l) cnt[l] = (cnt[l] || 0) + 1; });
+  const isDup = n => S.dup && assign[n] && (cnt[assign[n]] > 1 || knownSet.has(assign[n]));
+  knownCells.forEach(c => c.classList.toggle('dup', !!(S.dup && cnt[c.querySelector('.l').textContent])));
+  cells.forEach(c => {
+    c.querySelector('.l').textContent = assign[c._n] || '';
+    c.classList.toggle('act', c._n === active);
+    c.classList.toggle('cur', c._i === u);
+    c.classList.toggle('dup', !!isDup(c._n));
+  });
+  nums.forEach(n => {
+    const col = cols[n];
+    col._sel.value = assign[n] || ''; col._sel.disabled = solved;
+    col.classList.toggle('act', n === active);
+    col.classList.toggle('dup', !!isDup(n));
+  });
+  if(!solved && nums.every(n => assign[n] === answer[n])) win();
+  const r = results[rkey(idx)];
+  $('done').className = solved ? 'ok' : '';
+  $('done').textContent = solved ? T('solved') + ' ' + T('time') + ': ' + fmtTime(lastMs) + '. ' + T('best') + ': ' + fmtTime(r.best) + '.'
+    : r ? '✓ ' + T('best') + ': ' + fmtTime(r.best) : '';
+}
+
+function win(){
+  solved = true;
+  const ms = Date.now() - start, key = rkey(idx);
+  const r = results[key] || {count: 0};
+  r.count++; r.last = ms; if(!r.best || ms < r.best) r.best = ms;
+  results[key] = r; setCookie('results', results);
+  lastMs = ms;
+  $('time').textContent = fmtTime(ms);
+  renderField(); update();
+}
+
+// ---------- puzzle selection ----------
+const next = () => load(K % P.length + 1);
+function random(){
+  P = pool();
+  let c = [...P.keys()].filter(i => !results[rkey(i)]);
+  if(!c.length) c = [...P.keys()].filter(i => i !== idx);
+  if(!c.length) c = [...P.keys()];
+  load(c[Math.floor(Math.random() * c.length)] + 1);
+}
+
+// ---------- keyboard ----------
+function typeDigit(d){
+  clearTimeout(bufTimer);
+  if(!nums.some(n => String(n).startsWith(buf + d))) buf = '';
+  if(!nums.some(n => String(n).startsWith(buf + d))) return;
+  buf += d;
+  setNum(nums.includes(+buf) ? +buf : nums.find(n => String(n).startsWith(buf)));
+  bufTimer = setTimeout(() => buf = '', 1000);
+}
+document.addEventListener('keydown', e => {
+  const t = e.target, tg = t.tagName;
+  if(e.ctrlKey || e.metaKey || e.altKey || solved || tg === 'INPUT' || tg === 'BUTTON' || (tg === 'SELECT' && !t.closest('.col'))) return;
+  const k = e.key;
+  if(k === 'ArrowLeft' || k === 'ArrowRight'){ setU(u + (k === 'ArrowLeft' ? -1 : 1)); e.preventDefault(); }
+  else if(k === 'ArrowUp' || k === 'ArrowDown'){
+    const opts = [''].concat([...alpha]), n = opts.length;
+    const i = (opts.indexOf(assign[active] || '') + (k === 'ArrowDown' ? 1 : -1) + n) % n;
+    assign[active] = opts[i]; update(); e.preventDefault();
+  }
+  else if(/^[0-9]$/.test(k)){ typeDigit(k); e.preventDefault(); }
+  else if(k === 'Backspace' || k === 'Delete'){ assign[active] = ''; update(); e.preventDefault(); }
+  else if(k === ' '){
+    if(u < cells.length){
+      if(LV[S.lvl].bare){ gaps.has(u) ? gaps.delete(u) : gaps.add(u); renderField(); update(); }
+      e.preventDefault();
+    }
+  }
+  else if(k.length === 1 && alpha.includes(k.toLowerCase())){ assign[active] = k.toLowerCase(); update(); advance(); e.preventDefault(); }
+});
+
+// ---------- interface ----------
+function syncUI(){
+  $('optDup').checked = S.dup; $('optAdv').value = S.adv; $('optScript').value = S.script; $('optOrth').value = S.orth;
+  applyUI();
+  document.querySelectorAll('.be').forEach(el => el.hidden = S.lang !== 'be');
+  document.querySelectorAll('.lat').forEach(el => el.hidden = S.lang !== 'be' || S.script !== 'lat');
+  document.querySelectorAll('#flags button').forEach(b => b.setAttribute('aria-pressed', b.dataset.l === S.lang));
+}
+Object.keys(FLAGS).forEach(l => {
+  const b = document.createElement('button'), f = FLAGS[l];
+  b.dataset.l = l; b.title = f[0]; b.setAttribute('aria-label', f[0]);
+  b.innerHTML = '<svg viewBox="' + f[2] + '" preserveAspectRatio="none">' + f[1] + '</svg>';
+  b.onclick = () => { S.lang = l; saveS(); syncUI(); random(); };
+  $('flags').appendChild(b);
+});
+$('lvl').onchange = e => { S.lvl = +e.target.value; saveS(); random(); };
+$('num').onchange = e => load(+e.target.value);
+$('bnext').onclick = next;
+$('brand').onclick = random;
+$('optDup').onchange = e => { S.dup = e.target.checked; saveS(); update(); };
+$('optAdv').onchange = e => { S.adv = e.target.value; saveS(); };
+$('optScript').onchange = e => { S.script = e.target.value; saveS(); syncUI(); load(K); };
+$('optOrth').onchange = e => { S.orth = e.target.value; saveS(); syncUI(); load(K); };
+setInterval(() => { if(!solved) $('time').textContent = fmtTime(Date.now() - start); }, 200);
+syncUI(); P = pool(); random();
+</script>
+</body>
+</html>
