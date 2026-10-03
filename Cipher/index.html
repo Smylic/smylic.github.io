@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -150,7 +150,7 @@ function setCookie(name, val){
   mem[name] = val;
   try{ document.cookie = name + '=' + encodeURIComponent(JSON.stringify(val)) + '; max-age=31536000; path=/; SameSite=Lax'; }catch(e){}
 }
-const S = Object.assign({dup:true, adv:'free', lang:'en', lvl:2, script:'cyr', orth:'l'}, getCookie('settings', {}));
+const S = Object.assign({dup:true, adv:'free', lang:'be', lvl:2, script:'cyr', orth:'l'}, getCookie('settings', {}));
 const results = getCookie('results', {});
 const saveS = () => setCookie('settings', S);
 
