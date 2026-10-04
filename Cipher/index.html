@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ru">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -109,7 +109,7 @@ const ALPHA = {
   bec:'абвгдеёжзійклмнопрстуўфхцчшыьэюя',
   bel:'abcćčdefghijklĺłmnńoprsśštuŭvyzźžż'
 };
-const PASS = window.PUZZLES;   // PASS[lang][level] = array of passages, see puzzles/*.js
+const PASS = window.PUZZLES || {};   // PASS[lang][level] = array of passages, see puzzles/*.js
 const FLAGS = {
   en:['English','<rect width="60" height="30" fill="#012169"/><path d="M0 0l60 30M60 0L0 30" stroke="#fff" stroke-width="6"/><path d="M0 0l60 30M60 0L0 30" stroke="#C8102E" stroke-width="2"/><path d="M30 0v30M0 15h60" stroke="#fff" stroke-width="10"/><path d="M30 0v30M0 15h60" stroke="#C8102E" stroke-width="6"/>','0 0 60 30'],
   de:['Deutsch','<rect width="5" height="1" fill="#000"/><rect y="1" width="5" height="1" fill="#D00"/><rect y="2" width="5" height="1" fill="#FFCE00"/>','0 0 5 3'],
@@ -118,24 +118,27 @@ const FLAGS = {
 const LV = [{long:1,h:4},{long:0,h:2},{long:1,h:0},{long:0,h:0},{long:1,h:0,bare:1},{long:0,h:0,bare:1}];
 const I18N = {
   en:{h1:'Cipher',sub:'Every letter of the text is replaced by a number. Identical letters are replaced by identical numbers, different letters by different numbers. Restore the original passage.',lvlLabel:'Difficulty level',
-    lv:['Low','Below medium','Medium','Above medium','High','Highest'],no:'No.',of:'of',next:'Next',rand:'Random',time:'Time',
+    lv:['Low','Below medium','Medium','Above medium','High','Sky-high'],no:'No.',of:'of',next:'Next',rand:'Random',time:'Time',
     tbl:'Mapping table',set:'Settings',dup:'Highlight identical letters mistakenly assigned to different numbers',adv:'After choosing a letter',
     advOff:'stay in place',advNext:'go to the next number',advFree:'go to the next free number',
+    none:'No puzzles found for this language and level. Check that puzzles/xx.js is loaded.',
     solved:'Solved!',best:'best',sel:'Letter for number ',
-    help:'Keyboard: ← → move to the neighbouring letter in the field; after the last letter comes the table, then the field again. Type digits to jump to a number. A letter key assigns that letter, Backspace or Delete clears it, ↑ ↓ cycle through the letters. On the hard levels the space bar inserts or removes a space after the current letter.'},
+    help:'Keyboard: ← → move along the text or along the table (both wrap around); Tab switches between the text and the table; Ctrl+← / Ctrl+→ jump to the nearest free cell. Type digits to jump to a number. A letter key assigns that letter, Delete clears it, ↑ ↓ cycle through the letters. Ctrl+Z or Backspace undoes the last action. On the hard levels the space bar inserts or removes a space after the current letter.'},
   de:{h1:'Chiffre',sub:'Jeder Buchstabe des Textes wurde durch eine Zahl ersetzt. Gleiche Buchstaben wurden durch gleiche Zahlen ersetzt, verschiedene Buchstaben durch verschiedene Zahlen. Stelle den Originaltext wieder her.',lvlLabel:'Schwierigkeitsstufe',
-    lv:['Niedrig','Unter mittel','Mittel','Über mittel','Hoch','Am höchsten'],no:'Nr.',of:'von',next:'Nächstes',rand:'Zufällig',time:'Zeit',
+    lv:['Niedrig','Unter mittel','Mittel','Über mittel','Hoch','Himmelhoch'],no:'Nr.',of:'von',next:'Nächstes',rand:'Zufällig',time:'Zeit',
     tbl:'Zuordnungstabelle',set:'Einstellungen',dup:'Gleiche Buchstaben hervorheben, die fälschlich verschiedenen Zahlen zugewiesen wurden',adv:'Nach der Wahl eines Buchstabens',
     advOff:'an Ort und Stelle bleiben',advNext:'zur nächsten Zahl wechseln',advFree:'zur nächsten freien Zahl wechseln',
+    none:'Keine Rätsel für diese Sprache und Stufe gefunden. Prüfe, ob puzzles/xx.js geladen wird.',
     solved:'Gelöst!',best:'Bestzeit',sel:'Buchstabe für Zahl ',
-    help:'Tastatur: ← → wechseln zum Nachbarbuchstaben im Feld; nach dem letzten Buchstaben folgt die Tabelle, danach wieder das Feld. Ziffern springen zu einer Zahl. Eine Buchstabentaste weist den Buchstaben zu, Backspace oder Entf löscht ihn, ↑ ↓ blättern im Kreis durch die Buchstaben. Auf den schweren Stufen fügt die Leertaste nach dem aktuellen Buchstaben ein Leerzeichen ein oder entfernt es.'},
+    help:'Tastatur: ← → bewegen sich durch den Text oder durch die Tabelle (jeweils im Kreis); Tab wechselt zwischen Text und Tabelle; Strg+← / Strg+→ springen zur nächsten freien Zelle. Ziffern springen zu einer Zahl. Eine Buchstabentaste weist den Buchstaben zu, Entf löscht ihn, ↑ ↓ blättern im Kreis durch die Buchstaben. Strg+Z oder Rücktaste macht die letzte Aktion rückgängig. Auf den schweren Stufen fügt die Leertaste nach dem aktuellen Buchstaben ein Leerzeichen ein oder entfernt es.'},
   be:{h1:'Шыфроўка',sub:'Кожная літара тэксту замененая лікам. Аднолькавыя літары — аднолькавымі лікамі, розныя літары — рознымі лікамі. Аднавіце зыходную фразу.',lvlLabel:'Узровень складанасці',
-    lv:['Самы нізкі','Ніжэйшы за сярэдні','Сярэдні','Вышэйшы за сярэдні','Высокі','Самы высокі'],no:'№',of:'з',next:'Наступная',rand:'Выпадковая',time:'Час',
+    lv:['Нізкі','Ніжэй за сярэдні','Сярэдні','Вышэй за сярэдні','Высокі','Захмарны'],no:'№',of:'з',next:'Наступная',rand:'Выпадковая',time:'Час',
     tbl:'Табліца адпаведнасці',set:'Налады',dup:'Падсвятляць аднолькавыя літары, памылкова прызначаныя розным лікам',adv:'Пасля выбару літары',
     advOff:'заставацца на месцы',advNext:'перайсці да наступнага ліку',advFree:'перайсці да наступнага вольнага ліку',
     script:'Беларускае пісьмо',scriptC:'кірыліца',scriptL:'лацінка',orth:'Лацінка',o1:'Сучасная: l / ĺ',o2:'Сучасная: ł / l',o3:'Старая: cz, sz, ż, ł',
+    none:'Для гэтай мовы і ўзроўню няма галаваломак. Праверце, ці загружаецца puzzles/xx.js.',
     solved:'Разгадана!',best:'лепшы',sel:'Літара для ліку ',
-    help:'Клавіятура: ← → — суседняя літара ў полі, пасля апошняй літары ідзе табліца, потым зноў поле. Набор лічбаў — пераход да ліку. Літара — прызначыць, Backspace або Delete — прыбраць, ↑ ↓ — перабіраць літары па коле. На складаных узроўнях прабел у полі ўстаўляе або прыбірае прабел пасля бягучай літары.'}
+    help:'Клавіятура: ← → — рух па тэксце або па табліцы (абодва па коле); Tab — пераход паміж тэкстам і табліцай; Ctrl+← / Ctrl+→ — да бліжэйшай вольнай клеткі. Набор лічбаў — пераход да ліку. Літара — прызначыць, Delete — прыбраць, ↑ ↓ — перабіраць літары па коле. Ctrl+Z або Backspace — адмяніць апошняе дзеянне. На складаных узроўнях прабел у полі ўстаўляе або прыбірае прабел пасля бягучай літары.'}
 };
 // ---------- cookie ----------
 const mem = {};
@@ -150,11 +153,19 @@ function setCookie(name, val){
   mem[name] = val;
   try{ document.cookie = name + '=' + encodeURIComponent(JSON.stringify(val)) + '; max-age=31536000; path=/; SameSite=Lax'; }catch(e){}
 }
-const S = Object.assign({dup:true, adv:'free', lang:'be', lvl:2, script:'cyr', orth:'l'}, getCookie('settings', {}));
+const S = Object.assign({dup:true, adv:'free', lang:'en', lvl:2, script:'cyr', orth:'l'}, getCookie('settings', {}));
+// settings come from a cookie: make sure stored values are still valid
+if(!FLAGS[S.lang]) S.lang = 'en';
+if(!(S.lvl >= 0 && S.lvl < LV.length)) S.lvl = 2;
+if(!['cyr', 'lat'].includes(S.script)) S.script = 'cyr';
+if(!['l', 'ł', 'old'].includes(S.orth)) S.orth = 'l';
 const results = getCookie('results', {});
 const saveS = () => setCookie('settings', S);
 
 // ---------- Belarusian Latin transliteration ----------
+// TODO: in Latin mode, Latin letters of foreign words inside Belarusian passages should be ciphered too
+// (now they are plain punctuation). Cyrillic and Latin texts also have different letter counts,
+// so the generator's min/max letter ranges are only approximate for the Latin script.
 const LAT = {а:'a',б:'b',в:'v',г:'h',д:'d',е:'e',ё:'o',ж:'ž',з:'z',і:'i',й:'j',к:'k',л:'l',м:'m',н:'n',о:'o',п:'p',р:'r',с:'s',т:'t',у:'u',ў:'ŭ',ф:'f',х:'ch',ц:'c',ч:'č',ш:'š',ы:'y',э:'e',ю:'u',я:'a'};
 const IOT = {е:'ie',ё:'io',ю:'iu',я:'ia'}, JOT = {е:'je',ё:'jo',ю:'ju',я:'ja'};
 const SOFT = {l:'ĺ',ł:'l',n:'ń',c:'ć',s:'ś',z:'ź'}, VOW = 'аеёіоуыэюя';
@@ -179,11 +190,14 @@ function toLat(t, o){
 }
 const T = k => { const s = I18N[S.lang][k] || ''; return S.lang === 'be' && S.script === 'lat' ? toLat(s, S.orth) : s; };
 const lvName = i => { const s = I18N[S.lang].lv[i]; return S.lang === 'be' && S.script === 'lat' ? toLat(s, S.orth) : s; };
-const setTitle = () => $('title').textContent = FLAGS[S.lang][0] + ' · ' + lvName(S.lvl);
+// language names are shown in the Latin script too when Belarusian Latin is selected
+const langName = l => l === 'be' && S.script === 'lat' ? toLat(FLAGS.be[0], S.orth) : FLAGS[l][0];
+const setTitle = () => $('title').textContent = langName(S.lang) + ' · ' + lvName(S.lvl);
 function applyUI(){
   document.querySelectorAll('[data-i]').forEach(el => el.textContent = T(el.dataset.i));
   $('lvl').innerHTML = LV.map((_, i) => '<option value="' + i + '">' + lvName(i) + '</option>').join('');
   $('lvl').value = S.lvl;
+  document.querySelectorAll('#flags button').forEach(b => { const n = langName(b.dataset.l); b.title = n; b.setAttribute('aria-label', n); });
   document.title = T('h1'); document.documentElement.lang = S.lang;
   if(items) setTitle();
 }
@@ -199,7 +213,7 @@ const pool = () => (PASS[S.lang] || [])[S.lvl] || [];
 const rkey = i => S.lang + ':' + i + ':' + S.lvl;
 
 // ---------- state ----------
-let knownSet, knownCells, lastMs, P, K, idx, alpha, items, nums, answer, assign, gaps, u, active, solved, start, cells, cols, buf = '', bufTimer;
+let hist, run, lastF, knownSet, knownCells, lastMs, P, K, idx, alpha, items, nums, answer, assign, gaps, u, active, solved, start, cells, cols, buf = '', bufTimer;
 
 function fmtTime(ms){
   const t = Math.floor(ms / 100) / 10, m = Math.floor(t / 60), s = (t - m * 60).toFixed(1);
@@ -207,7 +221,12 @@ function fmtTime(ms){
 }
 
 function load(k){
-  P = pool(); if(!P.length) return;
+  P = pool();
+  if(!P.length){   // no data: the puzzle file is missing or empty
+    cells = []; nums = []; solved = true; $('table').innerHTML = '';
+    $('field').textContent = T('none').replace('xx', S.lang);
+    $('tot').textContent = 0; return;
+  }
   K = Math.max(1, Math.min(P.length, k || 1)); idx = K - 1;
   const L = LV[S.lvl], ak = alphaKey(); alpha = ALPHA[ak];
   let text = P[idx];
@@ -224,7 +243,7 @@ function load(k){
   answer = {};
   items.filter(i => i.t === 'l').forEach(i => answer[i.n] = i.ch);
   nums = Object.keys(answer).map(Number).sort((a, b) => a - b);
-  assign = {}; gaps = new Set(); solved = false; u = 0; start = Date.now(); buf = '';
+  assign = {}; gaps = new Set(); hist = []; run = false; lastF = 0; solved = false; u = 0; start = Date.now(); buf = '';
 
   const table = $('table'); table.innerHTML = ''; cols = {};
   nums.forEach(n => {
@@ -232,8 +251,8 @@ function load(k){
     const sel = document.createElement('select'); sel.setAttribute('aria-label', T('sel') + n);
     sel.innerHTML = '<option value="">—</option>' + [...alpha].map(l => '<option value="' + l + '">' + l + '</option>').join('');
     col.innerHTML = '<div class="n">' + n + '</div>'; col.appendChild(sel);
-    sel.onfocus = () => { if(active !== n) setNum(n); };
-    sel.onchange = () => { if(solved) return; assign[n] = sel.value; update(); if(sel.value) advance(); };
+    sel.onfocus = () => { if(active !== n) setU(cells.length + nums.indexOf(n)); };
+    sel.onchange = () => { if(solved) return; setLetter(n, sel.value); if(sel.value) advance(); };
     col._sel = sel; cols[n] = col; table.appendChild(col);
   });
 
@@ -290,6 +309,7 @@ window.addEventListener('resize', markWraps);
 // u: 0..N-1 = field cells, N..N+M-1 = table columns; navigation wraps around
 function setU(x){
   if(solved) return;
+  run = false;   // moving breaks a run of up/down presses
   const N = cells.length, T = N + nums.length;
   u = ((x % T) + T) % T;
   active = u < N ? cells[u]._n : nums[u - N];
@@ -311,6 +331,45 @@ function advance(){
     const j = (u - base + d) % len, n = inF ? cells[j]._n : nums[j];
     if(S.adv === 'next' || !assign[n]){ setU(base + j); return; }
   }
+}
+
+// Navigation inside one zone (text or table), both wrap around.
+function stepZ(d){
+  const n = cells.length, m = nums.length;
+  if(u < n) setU(((u + d) % n + n) % n);
+  else setU(n + (((u - n + d) % m) + m) % m);
+}
+// Ctrl+arrows: nearest cell in the given direction whose number has no letter yet.
+function jumpFree(d){
+  const n = cells.length, inF = u < n, base = inF ? 0 : n, len = inF ? n : nums.length;
+  for(let k = 1; k <= len; k++){
+    const j = (((u - base + d * k) % len) + len) % len, num = inF ? cells[j]._n : nums[j];
+    if(!assign[num]){ setU(base + j); return; }
+  }
+}
+// Tab: switch between the text and the table, keeping the current number.
+function toggleZone(){
+  const n = cells.length;
+  if(u < n){ lastF = u; setU(n + nums.indexOf(active)); return; }
+  let j = 0;
+  for(let k = 0; k < n; k++){ const i = (lastF + k) % n; if(cells[i]._n === active){ j = i; break; } }
+  setU(j);
+}
+
+// Undo history: {u, n, before} for a letter change, {u, gap, i} for a space toggle.
+// Moving is not an action; consecutive up/down presses on one number form a single action.
+function setLetter(n, v, ud){
+  const before = assign[n] || '', last = hist[hist.length - 1];
+  if(before === v) return;
+  if(!(ud && run && last && last.ud && last.n === n)) hist.push({u, n, before, ud: !!ud});
+  assign[n] = v; run = !!ud; update();
+}
+function undo(){
+  const a = hist.pop();
+  if(!a) return;
+  if(a.gap){ gaps.has(a.i) ? gaps.delete(a.i) : gaps.add(a.i); renderField(); }
+  else assign[a.n] = a.before;
+  setU(a.u);   // makes the cell where the action happened active
 }
 
 function update(){
@@ -369,23 +428,35 @@ function typeDigit(d){
 }
 document.addEventListener('keydown', e => {
   const t = e.target, tg = t.tagName;
-  if(e.ctrlKey || e.metaKey || e.altKey || solved || tg === 'INPUT' || tg === 'BUTTON' || (tg === 'SELECT' && !t.closest('.col'))) return;
+  if(!cells || !cells.length || solved || e.altKey || tg === 'INPUT' || tg === 'BUTTON' || (tg === 'SELECT' && !t.closest('.col'))) return;
+  if(e.ctrlKey || e.metaKey){
+    run = false;
+    if(e.code === 'KeyZ' && !e.shiftKey){ undo(); e.preventDefault(); }   // physical key: any layout
+    else if(e.key === 'ArrowLeft' || e.key === 'ArrowRight'){ jumpFree(e.key === 'ArrowLeft' ? -1 : 1); e.preventDefault(); }
+    return;
+  }
   const k = e.key;
-  if(k === 'ArrowLeft' || k === 'ArrowRight'){ setU(u + (k === 'ArrowLeft' ? -1 : 1)); e.preventDefault(); }
+  if(k !== 'ArrowUp' && k !== 'ArrowDown') run = false;
+  if(k === 'Tab'){ toggleZone(); e.preventDefault(); }
+  else if(k === 'ArrowLeft' || k === 'ArrowRight'){ stepZ(k === 'ArrowLeft' ? -1 : 1); e.preventDefault(); }
   else if(k === 'ArrowUp' || k === 'ArrowDown'){
     const opts = [''].concat([...alpha]), n = opts.length;
-    const i = (opts.indexOf(assign[active] || '') + (k === 'ArrowDown' ? 1 : -1) + n) % n;
-    assign[active] = opts[i]; update(); e.preventDefault();
+    setLetter(active, opts[(opts.indexOf(assign[active] || '') + (k === 'ArrowDown' ? 1 : -1) + n) % n], true);
+    e.preventDefault();
   }
   else if(/^[0-9]$/.test(k)){ typeDigit(k); e.preventDefault(); }
-  else if(k === 'Backspace' || k === 'Delete'){ assign[active] = ''; update(); e.preventDefault(); }
+  else if(k === 'Backspace'){ undo(); e.preventDefault(); }
+  else if(k === 'Delete'){ setLetter(active, ''); e.preventDefault(); }
   else if(k === ' '){
     if(u < cells.length){
-      if(LV[S.lvl].bare){ gaps.has(u) ? gaps.delete(u) : gaps.add(u); renderField(); update(); }
+      if(LV[S.lvl].bare){
+        hist.push({u, gap: true, i: u});
+        gaps.has(u) ? gaps.delete(u) : gaps.add(u); renderField(); update();
+      }
       e.preventDefault();
     }
   }
-  else if(k.length === 1 && alpha.includes(k.toLowerCase())){ assign[active] = k.toLowerCase(); update(); advance(); e.preventDefault(); }
+  else if(k.length === 1 && alpha.includes(k.toLowerCase())){ setLetter(active, k.toLowerCase()); advance(); e.preventDefault(); }
 });
 
 // ---------- interface ----------
