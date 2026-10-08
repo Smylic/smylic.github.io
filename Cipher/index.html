@@ -18,7 +18,7 @@ button{cursor:pointer}
 .panel{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:18px;margin-bottom:16px}
 .ctrl{display:flex;flex-wrap:wrap;gap:10px 16px;align-items:center}
 .ctrl .panel{margin:0}
-#flags{display:flex;gap:6px}
+#flags{display:flex;gap:6px;flex-basis:100%}
 #flags button{padding:4px;line-height:0}
 #flags button[aria-pressed=true]{border-color:var(--acc);background:var(--accbg);outline:2px solid var(--acc)}
 #flags svg{width:36px;height:24px;border:1px solid var(--line);display:block}
@@ -51,6 +51,11 @@ h2{font:600 16px/1.3 system-ui,sans-serif;margin:0 0 10px}
 label{display:inline-flex;gap:8px;align-items:center}
 .set{display:grid;gap:10px}
 .help{color:var(--mute);font-size:14px;margin:12px 0 0}
+dialog{background:var(--panel);color:var(--ink);border:1px solid var(--line);border-radius:10px;max-width:min(640px,92vw);padding:24px}
+dialog::backdrop{background:rgba(0,0,0,.45)}
+dialog .row{justify-content:flex-end}
+#qtext{margin:0 0 12px;padding-left:14px;border-left:3px solid var(--acc);font:20px/1.5 Georgia,'Times New Roman',serif}
+#qsrc{margin:0 0 18px;text-align:right;color:var(--mute)}
 [hidden]{display:none!important}
 :focus-visible{outline:2px solid var(--acc);outline-offset:2px}
 @media (max-width:520px){.cell{width:32px}.word{column-gap:2px}#field{gap:12px 18px}}
@@ -73,6 +78,12 @@ label{display:inline-flex;gap:8px;align-items:center}
   <div class="bar"><span id="title"></span><span><span data-i="time"></span>: <span id="time">0:00</span></span></div>
   <div id="field" aria-label="Шифрованный текст"></div>
 </section>
+
+<dialog id="quote">
+  <blockquote id="qtext"></blockquote>
+  <p id="qsrc"></p>
+  <div class="row"><button id="qclose" data-i="close"></button><button id="qnext" data-i="next"></button></div>
+</dialog>
 
 <section class="panel">
   <h2 data-i="tbl"></h2>
@@ -109,7 +120,7 @@ const ALPHA = {
   bec:'абвгдеёжзійклмнопрстуўфхцчшыьэюя',
   bel:'abcćčdefghijklĺłmnńoprsśštuŭvyzźžż'
 };
-const PASS = window.PUZZLES || {};   // PASS[lang][level] = array of passages, see puzzles/*.js
+const PASS = window.PUZZLES || {};   // PASS[lang] = {sources, levels}; levels[level] = passages, see puzzles/*.js
 const FLAGS = {
   en:['English','<rect width="60" height="30" fill="#012169"/><path d="M0 0l60 30M60 0L0 30" stroke="#fff" stroke-width="6"/><path d="M0 0l60 30M60 0L0 30" stroke="#C8102E" stroke-width="2"/><path d="M30 0v30M0 15h60" stroke="#fff" stroke-width="10"/><path d="M30 0v30M0 15h60" stroke="#C8102E" stroke-width="6"/>','0 0 60 30'],
   de:['Deutsch','<rect width="5" height="1" fill="#000"/><rect y="1" width="5" height="1" fill="#D00"/><rect y="2" width="5" height="1" fill="#FFCE00"/>','0 0 5 3'],
@@ -122,23 +133,26 @@ const I18N = {
     tbl:'Mapping table',set:'Settings',dup:'Highlight identical letters mistakenly assigned to different numbers',adv:'After choosing a letter',
     advOff:'stay in place',advNext:'go to the next number',advFree:'go to the next free number',
     none:'No puzzles found for this language and level. Check that puzzles/xx.js is loaded.',
+    close:'Close',
     solved:'Solved!',best:'best',sel:'Letter for number ',
-    help:'Keyboard: ← → move along the text or along the table (both wrap around); Tab switches between the text and the table; Ctrl+← / Ctrl+→ jump to the nearest free cell. Type digits to jump to a number. A letter key assigns that letter, Delete clears it, ↑ ↓ cycle through the letters. Ctrl+Z or Backspace undoes the last action. On the hard levels the space bar inserts or removes a space after the current letter.'},
+    help:'Keyboard: ← → move along the text or along the table (both wrap around); Tab switches between the text and the table; Ctrl+← / Ctrl+→ jump to the nearest free cell. Type digits to jump to a number. A letter key assigns that letter, Delete clears it, ↑ ↓ cycle through the letters. Ctrl+Z or Backspace undoes the last action. On the hard levels the space bar inserts or removes a space before the current letter.'},
   de:{h1:'Chiffre',sub:'Jeder Buchstabe des Textes wurde durch eine Zahl ersetzt. Gleiche Buchstaben wurden durch gleiche Zahlen ersetzt, verschiedene Buchstaben durch verschiedene Zahlen. Stelle den Originaltext wieder her.',lvlLabel:'Schwierigkeitsstufe',
     lv:['Niedrig','Unter mittel','Mittel','Über mittel','Hoch','Himmelhoch'],no:'Nr.',of:'von',next:'Nächstes',rand:'Zufällig',time:'Zeit',
     tbl:'Zuordnungstabelle',set:'Einstellungen',dup:'Gleiche Buchstaben hervorheben, die fälschlich verschiedenen Zahlen zugewiesen wurden',adv:'Nach der Wahl eines Buchstabens',
     advOff:'an Ort und Stelle bleiben',advNext:'zur nächsten Zahl wechseln',advFree:'zur nächsten freien Zahl wechseln',
     none:'Keine Rätsel für diese Sprache und Stufe gefunden. Prüfe, ob puzzles/xx.js geladen wird.',
+    close:'Schließen',
     solved:'Gelöst!',best:'Bestzeit',sel:'Buchstabe für Zahl ',
-    help:'Tastatur: ← → bewegen sich durch den Text oder durch die Tabelle (jeweils im Kreis); Tab wechselt zwischen Text und Tabelle; Strg+← / Strg+→ springen zur nächsten freien Zelle. Ziffern springen zu einer Zahl. Eine Buchstabentaste weist den Buchstaben zu, Entf löscht ihn, ↑ ↓ blättern im Kreis durch die Buchstaben. Strg+Z oder Rücktaste macht die letzte Aktion rückgängig. Auf den schweren Stufen fügt die Leertaste nach dem aktuellen Buchstaben ein Leerzeichen ein oder entfernt es.'},
+    help:'Tastatur: ← → bewegen sich durch den Text oder durch die Tabelle (jeweils im Kreis); Tab wechselt zwischen Text und Tabelle; Strg+← / Strg+→ springen zur nächsten freien Zelle. Ziffern springen zu einer Zahl. Eine Buchstabentaste weist den Buchstaben zu, Entf löscht ihn, ↑ ↓ blättern im Kreis durch die Buchstaben. Strg+Z oder Rücktaste macht die letzte Aktion rückgängig. Auf den schweren Stufen fügt die Leertaste vor dem aktuellen Buchstaben ein Leerzeichen ein oder entfernt es.'},
   be:{h1:'Шыфроўка',sub:'Кожная літара тэксту замененая лікам. Аднолькавыя літары — аднолькавымі лікамі, розныя літары — рознымі лікамі. Аднавіце зыходную фразу.',lvlLabel:'Узровень складанасці',
     lv:['Нізкі','Ніжэйшы за сярэдні','Сярэдні','Вышэйшы за сярэдні','Высокі','Захмарны'],no:'№',of:'з',next:'Наступная',rand:'Выпадковая',time:'Час',
     tbl:'Табліца адпаведнасці',set:'Налады',dup:'Падсвятляць аднолькавыя літары, памылкова прызначаныя розным лікам',adv:'Пасля выбару літары',
     advOff:'заставацца на месцы',advNext:'перайсці да наступнага ліку',advFree:'перайсці да наступнага вольнага ліку',
     script:'Беларускае пісьмо',scriptC:'кірыліца',scriptL:'лацінка',orth:'Лацінка',o1:'Сучасная: l / ĺ',o2:'Сучасная: ł / l',o3:'Старая: cz, sz, ż, ł',
     none:'Для гэтай мовы і ўзроўню няма галаваломак. Праверце, ці загружаецца puzzles/xx.js.',
+    close:'Закрыць',
     solved:'Разгадана!',best:'лепшы',sel:'Літара для ліку ',
-    help:'Клавіятура: ← → — рух па тэксце або па табліцы (абодва па коле); Tab — пераход паміж тэкстам і табліцай; Ctrl+← / Ctrl+→ — да бліжэйшай вольнай клеткі. Набор лічбаў — пераход да ліку. Літара — прызначыць, Delete — прыбраць, ↑ ↓ — перабіраць літары па коле. Ctrl+Z або Backspace — адмяніць апошняе дзеянне. На складаных узроўнях прабел у полі ўстаўляе або прыбірае прабел пасля бягучай літары.'}
+    help:'Клавіятура: ← → — рух па тэксце або па табліцы (абодва па коле); Tab — пераход паміж тэкстам і табліцай; Ctrl+← / Ctrl+→ — да бліжэйшай вольнай клеткі. Набор лічбаў — пераход да ліку. Літара — прызначыць, Delete — прыбраць, ↑ ↓ — перабіраць літары па коле. Ctrl+Z або Backspace — адмяніць апошняе дзеянне. На складаных узроўнях прабел у полі ўстаўляе або прыбірае прабел перад бягучай літарай.'}
 };
 // ---------- cookie ----------
 const mem = {};
@@ -209,18 +223,18 @@ function shuf(arr, r){
   return arr;
 }
 const alphaKey = () => S.lang === 'be' ? (S.script === 'lat' ? 'bel' : 'bec') : S.lang;
-const pool = () => (PASS[S.lang] || [])[S.lvl] || [];
+const pool = () => ((PASS[S.lang] || {}).levels || [])[S.lvl] || [];
 const rkey = i => S.lang + ':' + i + ':' + S.lvl;
 
 // ---------- state ----------
-let hist, run, lastF, knownSet, knownCells, lastMs, P, K, idx, alpha, items, nums, answer, assign, gaps, u, active, solved, start, cells, cols, buf = '', bufTimer;
+let quote, hist, run, lastF, knownSet, knownCells, lastMs, P, K, idx, alpha, items, nums, answer, assign, gaps, u, active, solved, start, cells, cols, buf = '', bufTimer;
 
 function fmtTime(ms){
   const t = Math.floor(ms / 100) / 10, m = Math.floor(t / 60), s = (t - m * 60).toFixed(1);
   return m + ':' + (s.length < 4 ? '0' : '') + s;
 }
 
-function load(k){
+function load(k, st){
   P = pool();
   if(!P.length){   // no data: the puzzle file is missing or empty
     cells = []; nums = []; solved = true; $('table').innerHTML = '';
@@ -229,8 +243,11 @@ function load(k){
   }
   K = Math.max(1, Math.min(P.length, k || 1)); idx = K - 1;
   const L = LV[S.lvl], ak = alphaKey(); alpha = ALPHA[ak];
-  let text = P[idx];
+  // a passage is either a string or [text, source id]
+  let text = typeof P[idx] === 'string' ? P[idx] : P[idx][0];
+  const src = typeof P[idx] === 'string' ? null : ((PASS[S.lang].sources || {})[P[idx][1]] || null);
   if(ak === 'bel') text = toLat(text, S.orth);
+  quote = {text, src};
   const seed = (idx + 1) * 7919 + {en:1, de:2, be:3}[S.lang] * 104729 + S.lvl * 15485863;
   const nn = shuf(alpha.split('').map((_, i) => i + 1), rng(seed)), code = {};
   [...alpha].forEach((l, i) => code[l] = nn[i]);
@@ -244,6 +261,12 @@ function load(k){
   items.filter(i => i.t === 'l').forEach(i => answer[i.n] = i.ch);
   nums = Object.keys(answer).map(Number).sort((a, b) => a - b);
   assign = {}; gaps = new Set(); hist = []; run = false; lastF = 0; solved = false; u = 0; start = Date.now(); buf = '';
+  if(st && st.ak === ak && Array.isArray(st.a) && st.a.length === nums.length && st.t > 0 && st.t <= Date.now()){
+    // restore the saved progress of this puzzle
+    nums.forEach((n, i) => { if(st.a[i] >= 0 && alpha[st.a[i]]) assign[n] = alpha[st.a[i]]; });
+    (st.g || []).forEach(i => gaps.add(i));
+    start = st.t;
+  }
 
   const table = $('table'); table.innerHTML = ''; cols = {};
   nums.forEach(n => {
@@ -253,6 +276,8 @@ function load(k){
     col.innerHTML = '<div class="n">' + n + '</div>'; col.appendChild(sel);
     sel.onfocus = () => { if(active !== n) setU(cells.length + nums.indexOf(n)); };
     sel.onchange = () => { if(solved) return; setLetter(n, sel.value); if(sel.value) advance(); };
+    // a mouse/touch press anywhere on the column moves control to the table
+    col.addEventListener('pointerdown', () => { if(u < cells.length || active !== n) setU(cells.length + nums.indexOf(n)); });
     col._sel = sel; cols[n] = col; table.appendChild(col);
   });
 
@@ -394,6 +419,22 @@ function update(){
   $('done').className = solved ? 'ok' : '';
   $('done').textContent = solved ? T('solved') + ' ' + T('time') + ': ' + fmtTime(lastMs) + '. ' + T('best') + ': ' + fmtTime(r.best) + '.'
     : r ? '✓ ' + T('best') + ': ' + fmtTime(r.best) : '';
+  saveState();
+}
+
+// One small cookie per language: level, puzzle number, start time and progress
+// (letters as alphabet indices in the order of the table, -1 = empty; gaps = inserted spaces).
+function saveState(){
+  if(!P || !P.length) return;
+  setCookie('st_' + S.lang, solved ? {l: S.lvl}
+    : {l: S.lvl, k: K, t: start, ak: alphaKey(), a: nums.map(n => assign[n] ? alpha.indexOf(assign[n]) : -1), g: [...gaps]});
+}
+// Open the saved puzzle of the current language, or a random unsolved one.
+function enter(){
+  const st = getCookie('st_' + S.lang, null) || {};
+  S.lvl = st.l >= 0 && st.l < LV.length ? st.l : 2;
+  syncUI();
+  if(st.k > 0 && st.t > 0) load(st.k, st); else random();
 }
 
 function win(){
@@ -405,6 +446,21 @@ function win(){
   lastMs = ms;
   $('time').textContent = fmtTime(ms);
   renderField(); update();
+  showQuote();
+}
+
+// Pop-up with the solved text as a quotation and its source (author, work).
+function showQuote(){
+  const tr = x => S.lang === 'be' && S.script === 'lat' ? toLat(x, S.orth) : x;
+  $('qtext').textContent = quote.text;
+  const q = $('qsrc'); q.textContent = '';
+  if(quote.src){
+    const [author, work] = quote.src;
+    q.append('— ' + tr(author));
+    if(work){ q.append(author ? ', ' : ''); const i = document.createElement('i'); i.textContent = tr(work); q.append(i); }
+  }
+  const d = $('quote');
+  if(d.showModal && !d.open) d.showModal();
 }
 
 // ---------- puzzle selection ----------
@@ -449,9 +505,9 @@ document.addEventListener('keydown', e => {
   else if(k === 'Delete'){ setLetter(active, ''); e.preventDefault(); }
   else if(k === ' '){
     if(u < cells.length){
-      if(LV[S.lvl].bare){
-        hist.push({u, gap: true, i: u});
-        gaps.has(u) ? gaps.delete(u) : gaps.add(u); renderField(); update();
+      if(LV[S.lvl].bare && u > 0){   // a space goes before the current letter = after the previous one
+        hist.push({u, gap: true, i: u - 1});
+        gaps.has(u - 1) ? gaps.delete(u - 1) : gaps.add(u - 1); renderField(); update();
       }
       e.preventDefault();
     }
@@ -471,19 +527,22 @@ Object.keys(FLAGS).forEach(l => {
   const b = document.createElement('button'), f = FLAGS[l];
   b.dataset.l = l; b.title = f[0]; b.setAttribute('aria-label', f[0]);
   b.innerHTML = '<svg viewBox="' + f[2] + '" preserveAspectRatio="none">' + f[1] + '</svg>';
-  b.onclick = () => { S.lang = l; saveS(); syncUI(); random(); };
+  b.onclick = () => { S.lang = l; saveS(); enter(); };
   $('flags').appendChild(b);
 });
 $('lvl').onchange = e => { S.lvl = +e.target.value; saveS(); random(); };
 $('num').onchange = e => load(+e.target.value);
 $('bnext').onclick = next;
+$('qclose').onclick = () => $('quote').close();
+$('qnext').onclick = () => { $('quote').close(); next(); };
+$('quote').addEventListener('click', e => { if(e.target === $('quote')) $('quote').close(); });
 $('brand').onclick = random;
 $('optDup').onchange = e => { S.dup = e.target.checked; saveS(); update(); };
 $('optAdv').onchange = e => { S.adv = e.target.value; saveS(); };
 $('optScript').onchange = e => { S.script = e.target.value; saveS(); syncUI(); load(K); };
 $('optOrth').onchange = e => { S.orth = e.target.value; saveS(); syncUI(); load(K); };
 setInterval(() => { if(!solved) $('time').textContent = fmtTime(Date.now() - start); }, 200);
-syncUI(); P = pool(); random();
+enter();
 </script>
 </body>
 </html>
