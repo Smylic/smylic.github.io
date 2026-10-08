@@ -223,6 +223,8 @@ function shuf(arr, r){
   return arr;
 }
 const alphaKey = () => S.lang === 'be' ? (S.script === 'lat' ? 'bel' : 'bec') : S.lang;
+// Files in the old format (a plain array of levels) are still accepted.
+for(const l in PASS) if(Array.isArray(PASS[l])) PASS[l] = {sources: {}, levels: PASS[l]};
 const pool = () => ((PASS[S.lang] || {}).levels || [])[S.lvl] || [];
 const rkey = i => S.lang + ':' + i + ':' + S.lvl;
 
@@ -237,6 +239,7 @@ function fmtTime(ms){
 function load(k, st){
   P = pool();
   if(!P.length){   // no data: the puzzle file is missing or empty
+    console.warn('No puzzles for', S.lang, 'level', S.lvl, PASS[S.lang]);
     cells = []; nums = []; solved = true; $('table').innerHTML = '';
     $('field').textContent = T('none').replace('xx', S.lang);
     $('tot').textContent = 0; return;
@@ -433,6 +436,10 @@ function saveState(){
 function enter(){
   const st = getCookie('st_' + S.lang, null) || {};
   S.lvl = st.l >= 0 && st.l < LV.length ? st.l : 2;
+  if(!pool().length){   // the stored level has no passages: use the first level that has some
+    const lv = ((PASS[S.lang] || {}).levels || []).findIndex(a => a && a.length);
+    if(lv >= 0){ S.lvl = lv; delete st.k; }
+  }
   syncUI();
   if(st.k > 0 && st.t > 0) load(st.k, st); else random();
 }
